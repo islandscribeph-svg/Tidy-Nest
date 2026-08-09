@@ -17,7 +17,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
       assignedTo: { select: { id: true, name: true } },
       notes: { orderBy: { createdAt: "desc" }, include: { author: { select: { name: true } } } },
       files: { orderBy: { uploadedAt: "desc" } },
-      projects: { include: { tasks: { orderBy: { sortOrder: "asc" } } } },
+      checklistItems: { orderBy: { sortOrder: "asc" } },
+      worksheetEntries: { orderBy: { sortOrder: "asc" } },
+      reimbursementVendors: {
+        orderBy: { sortOrder: "asc" },
+        include: { items: { orderBy: { sortOrder: "asc" } } },
+      },
     },
   });
   if (!deal) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -29,7 +34,7 @@ const updateDealSchema = z.object({
     .enum(["NEW_LEAD", "CONTACTED", "CONSULTATION", "IN_PROGRESS", "CLOSED", "UNQUALIFIED", "DEAD"])
     .optional(),
   subStatus: z.string().nullable().optional(),
-  subject: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
   serviceType: z
     .enum(["ORGANIZING", "RELOCATION", "HOME_MANAGEMENT", "HOLIDAY_BOX", "MAINTENANCE", "OTHER"])
     .nullable()
@@ -47,6 +52,9 @@ const updateDealSchema = z.object({
   dateClosed: z.string().nullable().optional(),
   assignedToId: z.string().nullable().optional(),
   invoiceNumber: z.string().nullable().optional(),
+  consultInvoiceNumber: z.string().nullable().optional(),
+  consultInvoiceLink: z.string().nullable().optional(),
+  worksheetNotes: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -87,14 +95,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
     include: { contact: true, assignedTo: { select: { id: true, name: true } } },
   });
-
-  // Moving into IN_PROGRESS starts the project-tracking side of the tool.
-  if (parsed.data.stage === "IN_PROGRESS" && existing.stage !== "IN_PROGRESS") {
-    const hasProject = await prisma.project.findFirst({ where: { dealId: id } });
-    if (!hasProject) {
-      await prisma.project.create({ data: { dealId: id } });
-    }
-  }
 
   return NextResponse.json(deal);
 }

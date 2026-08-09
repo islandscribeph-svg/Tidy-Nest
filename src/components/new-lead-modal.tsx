@@ -16,7 +16,7 @@ export function NewLeadModal({
     lastName: "",
     email: "",
     phone: "",
-    subject: "",
+    title: "",
     serviceType: "",
     source: "",
   });
@@ -80,8 +80,13 @@ export function NewLeadModal({
               <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className="input" />
             </Field>
           </div>
-          <Field label="Subject">
-            <input value={form.subject} onChange={(e) => set("subject", e.target.value)} className="input" />
+          <Field label="Project title">
+            <input
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              placeholder="e.g. Fall Relocation"
+              className="input"
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Service">

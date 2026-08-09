@@ -17,7 +17,7 @@ const GROUP_NAMES = new Set([
 
 const COLS = {
   firstName: 2,
-  subject: 3,
+  title: 3, // was "Subject" in the Monday export
   service: 4,
   status: 5,
   dateClosed: 7,
@@ -119,7 +119,7 @@ export type ParsedRecord = {
   company?: string;
   stage: Stage;
   subStatus?: string;
-  subject?: string;
+  title?: string;
   serviceType?: ServiceType;
   detailsOfProject?: string;
   source: Source;
@@ -186,7 +186,7 @@ export async function parseMondayWorkbook(source: string | Buffer | ArrayBuffer)
       company: cellStr(row.getCell(COLS.company).value),
       stage: mapStage(currentGroup, statusCell),
       subStatus: statusCell,
-      subject: cellStr(row.getCell(COLS.subject).value),
+      title: cellStr(row.getCell(COLS.title).value),
       serviceType: mapService(cellStr(row.getCell(COLS.service).value)),
       detailsOfProject:
         cellStr(row.getCell(COLS.detailsOfProject).value) ?? cellStr(row.getCell(COLS.projectNotes).value),
@@ -252,7 +252,7 @@ export async function importMondayRecords(prisma: PrismaClient, records: ParsedR
         stage: r.stage,
         subStatus: r.subStatus,
         contactSaved: true,
-        subject: r.subject,
+        title: r.title,
         serviceType: r.serviceType,
         detailsOfProject: r.notes ? `${r.detailsOfProject ?? ""}\n\nLegacy notes: ${r.notes}`.trim() : r.detailsOfProject,
         source: r.source,

@@ -19,7 +19,7 @@ const createDealSchema = z.object({
   lastName: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
-  subject: z.string().optional(),
+  title: z.string().optional(),
   serviceType: z
     .enum(["ORGANIZING", "RELOCATION", "HOME_MANAGEMENT", "HOLIDAY_BOX", "MAINTENANCE", "OTHER"])
     .optional(),
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     data: {
       contactId: contact.id,
       stage: "NEW_LEAD",
-      subject: data.subject,
+      title: data.title,
       serviceType: data.serviceType,
       source: data.source ?? "UNKNOWN",
       sourceDetail: data.sourceDetail,

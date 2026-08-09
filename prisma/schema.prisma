@@ -60,12 +60,6 @@ enum FileType {
   OTHER
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
-}
-
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -74,9 +68,8 @@ model User {
   role         Role     @default(STAFF)
   createdAt    DateTime @default(now())
 
-  assignedDeals Deal[]  @relation("DealAssignee")
+  assignedDeals Deal[] @relation("DealAssignee")
   notes         Note[]
-  tasks         Task[]  @relation("TaskAssignee")
 }
 
 model Contact {
@@ -99,18 +92,20 @@ model Contact {
   @@index([phone])
 }
 
+// One pipeline item = one project (e.g. "Fall Relocation") for a Contact.
+// A Contact can have many Deals over time (repeat clients).
 model Deal {
-  id       String @id @default(cuid())
-  contact  Contact @relation(fields: [contactId], references: [id])
+  id        String  @id @default(cuid())
+  contact   Contact @relation(fields: [contactId], references: [id])
   contactId String
 
   stage        Stage   @default(NEW_LEAD)
   subStatus    String? // free text, scoped per stage (e.g. "Initial Email Sent")
   contactSaved Boolean @default(false) // true once required contact fields have been confirmed via the Save Contact flow
 
-  subject           String?
-  serviceType       ServiceType?
-  detailsOfProject  String?
+  title            String? // the project title shown on the pipeline card, e.g. "Fall Relocation"
+  serviceType      ServiceType?
+  detailsOfProject String?
 
   source       Source  @default(UNKNOWN)
   sourceDetail String?
@@ -123,8 +118,15 @@ model Deal {
   projectStartDate DateTime?
   dateClosed       DateTime?
 
-  // QuickBooks linkage (Phase 3) — stored now so the fields exist, sync deferred
-  invoiceNumber       String?
+  // Consultation tab: manual bridge to QuickBooks until real API integration exists
+  consultInvoiceNumber String?
+  consultInvoiceLink   String?
+
+  // Services Worksheet tab
+  worksheetNotes String?
+
+  // Legacy QuickBooks linkage fields carried over from the Monday import (Phase 3 sync deferred)
+  invoiceNumber        String?
   qbDepositPaymentLink String?
   qbFinalPaymentLink   String?
 
@@ -134,37 +136,64 @@ model Deal {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  notes    Note[]
-  files    File[]
-  projects Project[]
+  notes                Note[]
+  files                File[]
+  checklistItems       ChecklistItem[]
+  worksheetEntries     WorksheetEntry[]
+  reimbursementVendors ReimbursementVendor[]
 
   @@index([stage])
   @@index([contactId])
 }
 
-model Project {
-  id              String    @id @default(cuid())
-  deal            Deal      @relation(fields: [dealId], references: [id])
-  dealId          String
-  projectDateTime DateTime?
-  worksheetLink   String?
-  notes           String?
-  createdAt       DateTime  @default(now())
-
-  tasks Task[]
+// Consultation tab checklist.
+model ChecklistItem {
+  id        String   @id @default(cuid())
+  deal      Deal     @relation(fields: [dealId], references: [id])
+  dealId    String
+  label     String
+  done      Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
-model Task {
-  id         String     @id @default(cuid())
-  project    Project    @relation(fields: [projectId], references: [id])
-  projectId  String
-  title      String
-  status     TaskStatus @default(TODO)
-  dueDate    DateTime?
-  sortOrder  Int        @default(0)
-  assignee   User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  assigneeId String?
-  createdAt  DateTime   @default(now())
+// Services Worksheet tab line item: Description / Hours / Rate. The row
+// total (hours × rate) is computed, not stored.
+model WorksheetEntry {
+  id          String   @id @default(cuid())
+  deal        Deal     @relation(fields: [dealId], references: [id])
+  dealId      String
+  description String
+  hours       Decimal  @db.Decimal(10, 2)
+  rate        Decimal  @db.Decimal(10, 2)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// Reimbursements tab: one vendor block per entry, each with its own line
+// items. shippingFee/salesTax are flat dollar amounts staff fills in.
+// Subtotal/grand total (and the cross-vendor overview) are computed.
+model ReimbursementVendor {
+  id          String   @id @default(cuid())
+  deal        Deal     @relation(fields: [dealId], references: [id])
+  dealId      String
+  vendorName  String
+  shippingFee Decimal  @default(0) @db.Decimal(10, 2)
+  salesTax    Decimal  @default(0) @db.Decimal(10, 2)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  items ReimbursementItem[]
+}
+
+model ReimbursementItem {
+  id          String              @id @default(cuid())
+  vendor      ReimbursementVendor @relation(fields: [vendorId], references: [id])
+  vendorId    String
+  itemDetails String
+  quantity    Decimal             @db.Decimal(10, 2)
+  unitPrice   Decimal             @db.Decimal(10, 2)
+  sortOrder   Int                 @default(0)
 }
 
 // Activity/note timeline entry. Attached to a Deal and/or Contact so both

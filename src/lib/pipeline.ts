@@ -55,3 +55,18 @@ export const SOURCE_LABELS: Record<Source, string> = {
 // rendered as side lanes rather than inline with the main left-to-right flow.
 export const EXIT_STAGES: Stage[] = ["UNQUALIFIED", "DEAD"];
 export const MAIN_STAGES: Stage[] = STAGE_ORDER.filter((s) => !EXIT_STAGES.includes(s));
+
+// Stage-gated detail-panel tabs. Unqualified/Dead are treated as "reached
+// the max" rather than tracking real stage history, so a project's entered
+// data is never hidden after it exits — the tradeoff is that a project
+// marked Dead very early could show an empty Consultation tab.
+const CONSULTATION_REACHED: Stage[] = ["CONSULTATION", "IN_PROGRESS", "CLOSED", "UNQUALIFIED", "DEAD"];
+const IN_PROGRESS_REACHED: Stage[] = ["IN_PROGRESS", "CLOSED", "UNQUALIFIED", "DEAD"];
+
+export function hasReachedConsultation(stage: Stage): boolean {
+  return CONSULTATION_REACHED.includes(stage);
+}
+
+export function hasReachedInProgress(stage: Stage): boolean {
+  return IN_PROGRESS_REACHED.includes(stage);
+}

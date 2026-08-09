@@ -121,6 +121,7 @@ export function PipelineBoard({
 
       {selectedDealId && (
         <DealDrawer
+          key={selectedDealId}
           dealId={selectedDealId}
           users={users}
           onClose={() => setSelectedDealId(null)}

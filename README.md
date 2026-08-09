@@ -6,9 +6,17 @@ Stack: Next.js (App Router, TypeScript) + Prisma + Postgres, Tailwind. See `/roo
 
 ## Pipeline
 
+Each pipeline item is a **project** (e.g. "Fall Relocation") belonging to a contact, who may have several projects over time. Cards show the project title, the contact's name, and the service type.
+
 Stages: **New Leads → Contacted → Consultation → In Progress → Closed**, with **Unqualified** and **Dead** as exit lanes reachable from any stage. Drag a card between columns to change its stage.
 
-Clicking a card opens the deal detail drawer: stage/service/source fields, an activity/notes timeline, and (once a deal reaches In Progress) its linked project/tasks.
+Clicking a card opens the project detail drawer, with tabs that appear as the project matures:
+- **Details** (always shown): stage/service/source/value fields and the activity/notes timeline.
+- **Consultation** (once the project reaches Consultation): a checklist, the consultation date, and a "Create Consult Invoice on QuickBooks" button — currently a manual bridge (opens QuickBooks in a new tab; paste the resulting invoice number/link back into the two fields below it) until real QuickBooks API integration is built.
+- **Services Worksheet** (once In Progress): billable time entries (Description/Hours/Rate, with a computed total) and a notes field.
+- **Reimbursements** (once In Progress): per-vendor expense tracking (Item Details/Qty/Unit Price, computed subtotal, fillable shipping fee + sales tax, computed grand total per vendor), with a combined overview once there's more than one vendor.
+
+Tab visibility is based on the project's current stage reaching that point, not a full history — Unqualified/Dead are treated as having reached the maximum tab set so already-entered data is never hidden, even if that means an empty tab shows for a project that exited very early.
 
 ### Save Contact flow
 
@@ -57,7 +65,7 @@ A new lead isn't a full contact until required fields (name + email-or-phone + s
   "email": "jane@example.com",
   "phone": "555-0100",
   "serviceType": "ORGANIZING",
-  "subject": "Kitchen declutter",
+  "title": "Kitchen declutter",
   "detailsOfProject": "...",
   "source": "Instagram"
 }
