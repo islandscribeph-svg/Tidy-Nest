@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSetupKey } from "@/lib/setup-auth";
+import { corsJson, corsPreflight } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function GET(req: NextRequest) {
   if (!checkSetupKey(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return corsJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const [users, deals, contacts] = await Promise.all([
@@ -13,5 +18,5 @@ export async function GET(req: NextRequest) {
     prisma.contact.count(),
   ]);
 
-  return NextResponse.json({ users, deals, contacts });
+  return corsJson({ users, deals, contacts });
 }
