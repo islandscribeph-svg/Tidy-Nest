@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { DealDetail } from "@/lib/types";
 
-type EmployeeOption = { id: string; name: string };
+type EmployeeOption = { id: string; name: string; active: boolean };
 
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
@@ -15,14 +15,15 @@ function toDateInput(iso: string | null) {
 
 export function WorksheetTab({
   deal,
+  employees,
   patchDeal,
   refetch,
 }: {
   deal: DealDetail;
+  employees: EmployeeOption[];
   patchDeal: (patch: Record<string, unknown>) => Promise<void>;
   refetch: () => void;
 }) {
-  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [draft, setDraft] = useState({
     employeeId: "",
     date: new Date().toISOString().slice(0, 10),
@@ -32,12 +33,7 @@ export function WorksheetTab({
   });
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/employees")
-      .then((r) => r.json())
-      .then((list: (EmployeeOption & { active: boolean })[]) => setEmployees(list.filter((e) => e.active)));
-  }, []);
-
+  const activeEmployees = employees.filter((e) => e.active);
   const total = deal.worksheetEntries.reduce((sum, e) => sum + Number(e.hours) * Number(e.rate), 0);
 
   async function addRow() {
@@ -156,7 +152,7 @@ export function WorksheetTab({
                   onChange={(e) => setDraft((d) => ({ ...d, employeeId: e.target.value }))}
                 >
                   <option value="">Select person...</option>
-                  {employees.map((emp) => (
+                  {activeEmployees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.name}
                     </option>

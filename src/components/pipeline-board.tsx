@@ -22,9 +22,11 @@ import { NewLeadModal } from "@/components/new-lead-modal";
 export function PipelineBoard({
   initialDeals,
   users,
+  employees,
 }: {
   initialDeals: DealSummary[];
   users: { id: string; name: string }[];
+  employees: { id: string; name: string; active: boolean }[];
 }) {
   const [deals, setDeals] = useState<DealSummary[]>(initialDeals);
   const [activeDeal, setActiveDeal] = useState<DealSummary | null>(null);
@@ -124,6 +126,7 @@ export function PipelineBoard({
           key={selectedDealId}
           dealId={selectedDealId}
           users={users}
+          employees={employees}
           onClose={() => setSelectedDealId(null)}
           onSaved={handleDealSaved}
         />

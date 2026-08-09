@@ -15,11 +15,13 @@ type TabKey = "details" | "consultation" | "worksheet" | "reimbursements" | "bil
 export function DealDrawer({
   dealId,
   users,
+  employees,
   onClose,
   onSaved,
 }: {
   dealId: string;
   users: { id: string; name: string }[];
+  employees: { id: string; name: string; active: boolean }[];
   onClose: () => void;
   onSaved: (deal: Partial<DealSummary> & { id: string }) => void;
 }) {
@@ -292,7 +294,7 @@ export function DealDrawer({
               )}
 
               {activeTab === "worksheet" && (
-                <WorksheetTab deal={deal} patchDeal={patchDeal} refetch={refetch} />
+                <WorksheetTab deal={deal} employees={employees} patchDeal={patchDeal} refetch={refetch} />
               )}
 
               {activeTab === "reimbursements" && (
