@@ -78,4 +78,25 @@ Per the build plan, these are scoped for later phases rather than this initial b
 
 ## Deploying
 
-Deploy to Vercel and point `DATABASE_URL` at your Supabase (or other) Postgres instance. Run `npm run db:deploy` (uses `prisma migrate deploy`, safe for production) as part of your deploy step, and `npm run db:seed` once to create the first login.
+Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your Supabase (or other) Postgres instance, plus `SESSION_SECRET` and `LEAD_INTAKE_SECRET`. The build (`npm run build`) runs `prisma migrate deploy` before `next build`, so every deploy automatically applies any pending schema migrations — nothing extra to run for that part.
+
+### First-time bootstrap on a fresh deploy
+
+Right after the first deploy, the database has tables but no admin login and no data. Two endpoints handle that one-time setup, both gated by an `x-setup-key` header that must match your `SESSION_SECRET` (they self-disable — return 409 — once a user/deal already exists, so they're safe to leave deployed rather than needing removal):
+
+```bash
+# 1. Create the first admin login
+curl -X POST https://<your-deploy>.vercel.app/api/setup/admin \
+  -H "x-setup-key: $SESSION_SECRET" -H "Content-Type: application/json" \
+  -d '{"name":"Admin","email":"you@tidynest.com","password":"choose-a-real-password"}'
+
+# 2. Import the legacy Monday export (optional, one-time)
+curl -X POST https://<your-deploy>.vercel.app/api/setup/import \
+  -H "x-setup-key: $SESSION_SECRET" \
+  -F "file=@/path/to/Main_Nest.xlsx"
+
+# Check current state at any time
+curl https://<your-deploy>.vercel.app/api/setup/status -H "x-setup-key: $SESSION_SECRET"
+```
+
+Local dev can still use `npm run db:seed` / `npm run import:monday` directly against a local or dev database if you prefer — the `/api/setup/*` routes exist specifically so a fresh Vercel+Supabase deploy can be bootstrapped without shell access to the production database.
