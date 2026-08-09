@@ -1,4 +1,4 @@
-import type { Stage, ServiceType, Source, FileType } from "@prisma/client";
+import type { Stage, ServiceType, Source, FileType, EmployeeType } from "@prisma/client";
 
 export type ContactSummary = {
   id: string;
@@ -52,10 +52,46 @@ export type ChecklistItemEntry = {
 
 export type WorksheetEntryRow = {
   id: string;
+  employeeId: string | null;
+  employee: { id: string; name: string } | null;
+  date: string | null;
   description: string;
   hours: string;
   rate: string;
   sortOrder: number;
+};
+
+export type AdditionalChargeEntry = {
+  id: string;
+  description: string;
+  amount: string;
+  sortOrder: number;
+};
+
+export type EmployeeSummary = {
+  id: string;
+  name: string;
+  type: EmployeeType;
+  hourlyRate: string;
+  active: boolean;
+};
+
+export type TimesheetEntryRow = {
+  id: string;
+  date: string;
+  hours: string;
+  description: string | null;
+  source: "manual";
+};
+
+export type WorksheetTimesheetRow = {
+  id: string;
+  date: string | null;
+  hours: string;
+  description: string;
+  source: "project";
+  dealId: string;
+  dealTitle: string | null;
 };
 
 export type ReimbursementItemEntry = {
@@ -83,6 +119,7 @@ export type DealDetail = DealSummary & {
   projectStartDate: string | null;
   dateClosed: string | null;
   invoiceNumber: string | null;
+  invoiceLink: string | null;
   consultInvoiceNumber: string | null;
   consultInvoiceLink: string | null;
   worksheetNotes: string | null;
@@ -91,4 +128,5 @@ export type DealDetail = DealSummary & {
   checklistItems: ChecklistItemEntry[];
   worksheetEntries: WorksheetEntryRow[];
   reimbursementVendors: VendorEntry[];
+  additionalCharges: AdditionalChargeEntry[];
 };

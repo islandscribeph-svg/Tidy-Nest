@@ -18,11 +18,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
       notes: { orderBy: { createdAt: "desc" }, include: { author: { select: { name: true } } } },
       files: { orderBy: { uploadedAt: "desc" } },
       checklistItems: { orderBy: { sortOrder: "asc" } },
-      worksheetEntries: { orderBy: { sortOrder: "asc" } },
+      worksheetEntries: {
+        orderBy: { sortOrder: "asc" },
+        include: { employee: { select: { id: true, name: true } } },
+      },
       reimbursementVendors: {
         orderBy: { sortOrder: "asc" },
         include: { items: { orderBy: { sortOrder: "asc" } } },
       },
+      additionalCharges: { orderBy: { sortOrder: "asc" } },
     },
   });
   if (!deal) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -52,6 +56,7 @@ const updateDealSchema = z.object({
   dateClosed: z.string().nullable().optional(),
   assignedToId: z.string().nullable().optional(),
   invoiceNumber: z.string().nullable().optional(),
+  invoiceLink: z.string().nullable().optional(),
   consultInvoiceNumber: z.string().nullable().optional(),
   consultInvoiceLink: z.string().nullable().optional(),
   worksheetNotes: z.string().nullable().optional(),

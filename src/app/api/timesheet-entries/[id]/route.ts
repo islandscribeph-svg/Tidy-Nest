@@ -6,11 +6,9 @@ import { getSession } from "@/lib/auth";
 type Params = { params: Promise<{ id: string }> };
 
 const schema = z.object({
-  description: z.string().min(1).optional(),
+  date: z.string().optional(),
   hours: z.number().min(0).optional(),
-  rate: z.number().min(0).optional(),
-  employeeId: z.string().nullable().optional(),
-  date: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -22,10 +20,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
   const { date, ...rest } = parsed.data;
-  const entry = await prisma.worksheetEntry.update({
+  const entry = await prisma.timesheetEntry.update({
     where: { id },
-    data: { ...rest, date: date === undefined ? undefined : date ? new Date(date) : null },
-    include: { employee: { select: { id: true, name: true } } },
+    data: { ...rest, date: date ? new Date(date) : undefined },
   });
   return NextResponse.json(entry);
 }
@@ -35,6 +32,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await prisma.worksheetEntry.delete({ where: { id } });
+  await prisma.timesheetEntry.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

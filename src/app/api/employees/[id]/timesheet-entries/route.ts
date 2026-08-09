@@ -6,11 +6,9 @@ import { getSession } from "@/lib/auth";
 type Params = { params: Promise<{ id: string }> };
 
 const schema = z.object({
-  description: z.string().min(1),
+  date: z.string(),
   hours: z.number().min(0),
-  rate: z.number().min(0),
-  employeeId: z.string().nullable().optional(),
-  date: z.string().nullable().optional(),
+  description: z.string().optional(),
 });
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -19,13 +17,15 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const parsed = schema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid worksheet entry" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid timesheet entry" }, { status: 400 });
 
-  const { date, ...rest } = parsed.data;
-  const count = await prisma.worksheetEntry.count({ where: { dealId: id } });
-  const entry = await prisma.worksheetEntry.create({
-    data: { dealId: id, ...rest, date: date ? new Date(date) : null, sortOrder: count },
-    include: { employee: { select: { id: true, name: true } } },
+  const entry = await prisma.timesheetEntry.create({
+    data: {
+      employeeId: id,
+      date: new Date(parsed.data.date),
+      hours: parsed.data.hours,
+      description: parsed.data.description,
+    },
   });
   return NextResponse.json(entry, { status: 201 });
 }

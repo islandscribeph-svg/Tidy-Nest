@@ -13,10 +13,17 @@ Stages: **New Leads → Contacted → Consultation → In Progress → Closed**,
 Clicking a card opens the project detail drawer, with tabs that appear as the project matures:
 - **Details** (always shown): stage/service/source/value fields and the activity/notes timeline.
 - **Consultation** (once the project reaches Consultation): a checklist, the consultation date, and a "Create Consult Invoice on QuickBooks" button — currently a manual bridge (opens QuickBooks in a new tab; paste the resulting invoice number/link back into the two fields below it) until real QuickBooks API integration is built.
-- **Services Worksheet** (once In Progress): billable time entries (Description/Hours/Rate, with a computed total) and a notes field.
+- **Services Worksheet** (once In Progress): billable time entries — Person / Date / Description / Hours / Rate, with a computed total — and a notes field. `Rate` here is what the *client* is billed; if a row is attributed to someone, those hours also land on that person's timesheet (see Employees below), valued at *their own* hourly rate instead.
 - **Reimbursements** (once In Progress): per-vendor expense tracking (Item Details/Qty/Unit Price, computed subtotal, fillable shipping fee + sales tax, computed grand total per vendor), with a combined overview once there's more than one vendor.
+- **Total Billables** (once In Progress): Service Hours Total + Reimbursements Total + itemized additional charges = Invoice Total, and a "Create Project Invoice on QuickBooks" button (same manual-bridge pattern as the Consultation tab's invoice button).
 
 Tab visibility is based on the project's current stage reaching that point, not a full history — Unqualified/Dead are treated as having reached the maximum tab set so already-entered data is never hidden, even if that means an empty tab shows for a project that exited very early.
+
+## Employees & Contractors
+
+A separate section (`/employees`) for staff and contractors: name, type, and an hourly rate — independent of whatever rate a project bills the client. Pay periods are semi-monthly (1st–15th, 16th–end of month); each employee's page shows a period selector and that period's hours from two sources merged into one table:
+- **Manual entries** — added directly on the timesheet.
+- **Project hours** — any Services Worksheet row attributed to that person, pulled in automatically and valued at *their* hourly rate (not the project's billing rate), labeled with which project it came from. Editing those rows happens on the project's Worksheet tab (same row, not a copy) so the two stay in sync.
 
 ### Save Contact flow
 
@@ -90,7 +97,7 @@ Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your
 
 ### First-time bootstrap on a fresh deploy
 
-Right after the first deploy, the database has tables but no admin login and no data. Two endpoints handle that one-time setup, both gated by an `x-setup-key` header that must match your `SESSION_SECRET` (they self-disable — return 409 — once a user/deal already exists, so they're safe to leave deployed rather than needing removal):
+Right after the first deploy, the database has tables but no admin login and no data. A few endpoints handle that one-time setup, all gated by an `x-setup-key` header that must match your `SESSION_SECRET` (they self-disable — return 409 — once a user/deal/employee already exists, so they're safe to leave deployed rather than needing removal):
 
 ```bash
 # 1. Create the first admin login
@@ -102,6 +109,11 @@ curl -X POST https://<your-deploy>.vercel.app/api/setup/admin \
 curl -X POST https://<your-deploy>.vercel.app/api/setup/import \
   -H "x-setup-key: $SESSION_SECRET" \
   -F "file=@/path/to/Main_Nest.xlsx"
+
+# 3. Seed the 5 named employees/contractors (optional, one-time — rates default
+# to $0 and need to be set on the Employees page afterward)
+curl -X POST https://<your-deploy>.vercel.app/api/setup/seed-employees \
+  -H "x-setup-key: $SESSION_SECRET"
 
 # Check current state at any time
 curl https://<your-deploy>.vercel.app/api/setup/status -H "x-setup-key: $SESSION_SECRET"

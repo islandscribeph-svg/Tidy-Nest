@@ -60,6 +60,11 @@ enum FileType {
   OTHER
 }
 
+enum EmployeeType {
+  EMPLOYEE
+  CONTRACTOR
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -125,7 +130,10 @@ model Deal {
   // Services Worksheet tab
   worksheetNotes String?
 
-  // Legacy QuickBooks linkage fields carried over from the Monday import (Phase 3 sync deferred)
+  // Total Billables tab: manual bridge to QuickBooks for the final project invoice
+  invoiceLink String?
+
+  // Legacy QuickBooks linkage fields carried over from the Monday import (deeper sync deferred)
   invoiceNumber        String?
   qbDepositPaymentLink String?
   qbFinalPaymentLink   String?
@@ -141,6 +149,7 @@ model Deal {
   checklistItems       ChecklistItem[]
   worksheetEntries     WorksheetEntry[]
   reimbursementVendors ReimbursementVendor[]
+  additionalCharges    AdditionalCharge[]
 
   @@index([stage])
   @@index([contactId])
@@ -157,17 +166,61 @@ model ChecklistItem {
   createdAt DateTime @default(now())
 }
 
-// Services Worksheet tab line item: Description / Hours / Rate. The row
-// total (hours × rate) is computed, not stored.
+// Services Worksheet tab line item: Person / Date / Description / Hours /
+// Rate. `rate` is the PROJECT's billing rate charged to the client — the
+// row total (hours × rate) is computed, not stored. When `employee` is set,
+// these same hours also appear on that person's timesheet, valued instead
+// at their own hourlyRate (looked up live, not snapshotted here).
 model WorksheetEntry {
+  id          String    @id @default(cuid())
+  deal        Deal      @relation(fields: [dealId], references: [id])
+  dealId      String
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  employeeId  String?
+  date        DateTime?
+  description String
+  hours       Decimal   @db.Decimal(10, 2)
+  rate        Decimal   @db.Decimal(10, 2)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+// Employees/Contractors section. hourlyRate is what THIS person is paid —
+// independent of whatever project-billing rate appears on WorksheetEntry
+// rows attributed to them.
+model Employee {
+  id         String       @id @default(cuid())
+  name       String
+  type       EmployeeType @default(CONTRACTOR)
+  hourlyRate Decimal      @db.Decimal(10, 2)
+  active     Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+
+  timesheetEntries TimesheetEntry[]
+  worksheetEntries WorksheetEntry[]
+}
+
+// Manually-entered timesheet hours, not tied to any project. Project-sourced
+// hours live on WorksheetEntry (via employeeId) instead of being duplicated
+// here, so there's exactly one row to edit either way.
+model TimesheetEntry {
   id          String   @id @default(cuid())
-  deal        Deal     @relation(fields: [dealId], references: [id])
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  String
+  date        DateTime
+  hours       Decimal  @db.Decimal(10, 2)
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+// Total Billables tab: ad hoc extra line items beyond service hours + reimbursements.
+model AdditionalCharge {
+  id          String  @id @default(cuid())
+  deal        Deal    @relation(fields: [dealId], references: [id])
   dealId      String
   description String
-  hours       Decimal  @db.Decimal(10, 2)
-  rate        Decimal  @db.Decimal(10, 2)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
+  amount      Decimal @db.Decimal(10, 2)
+  sortOrder   Int     @default(0)
 }
 
 // Reimbursements tab: one vendor block per entry, each with its own line

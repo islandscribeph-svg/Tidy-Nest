@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DealDetail } from "@/lib/types";
+
+type EmployeeOption = { id: string; name: string };
 
 function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+}
+
+function toDateInput(iso: string | null) {
+  return iso ? iso.slice(0, 10) : "";
 }
 
 export function WorksheetTab({
@@ -16,18 +22,33 @@ export function WorksheetTab({
   patchDeal: (patch: Record<string, unknown>) => Promise<void>;
   refetch: () => void;
 }) {
-  const [draft, setDraft] = useState({ description: "", hours: "", rate: "" });
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [draft, setDraft] = useState({
+    employeeId: "",
+    date: new Date().toISOString().slice(0, 10),
+    description: "",
+    hours: "",
+    rate: "",
+  });
   const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/employees")
+      .then((r) => r.json())
+      .then((list: (EmployeeOption & { active: boolean })[]) => setEmployees(list.filter((e) => e.active)));
+  }, []);
 
   const total = deal.worksheetEntries.reduce((sum, e) => sum + Number(e.hours) * Number(e.rate), 0);
 
   async function addRow() {
-    if (!draft.description.trim() || !draft.hours || !draft.rate) return;
+    if (!draft.description.trim() || !draft.hours || !draft.rate || !draft.employeeId) return;
     setAdding(true);
     const res = await fetch(`/api/deals/${deal.id}/worksheet-entries`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        employeeId: draft.employeeId,
+        date: draft.date || undefined,
         description: draft.description,
         hours: Number(draft.hours),
         rate: Number(draft.rate),
@@ -35,7 +56,7 @@ export function WorksheetTab({
     });
     setAdding(false);
     if (res.ok) {
-      setDraft({ description: "", hours: "", rate: "" });
+      setDraft({ employeeId: "", date: draft.date, description: "", hours: "", rate: "" });
       refetch();
     }
   }
@@ -56,10 +77,12 @@ export function WorksheetTab({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-md border border-neutral-200">
+      <div className="overflow-x-auto rounded-md border border-neutral-200">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
             <tr>
+              <th className="w-32 px-3 py-2 text-left font-medium">Person</th>
+              <th className="w-28 px-3 py-2 text-left font-medium">Date</th>
               <th className="px-3 py-2 text-left font-medium">Description</th>
               <th className="w-20 px-3 py-2 text-right font-medium">Hours</th>
               <th className="w-24 px-3 py-2 text-right font-medium">Rate</th>
@@ -70,6 +93,28 @@ export function WorksheetTab({
           <tbody>
             {deal.worksheetEntries.map((entry) => (
               <tr key={entry.id} className="border-t border-neutral-100">
+                <td className="px-3 py-1.5">
+                  <select
+                    className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                    defaultValue={entry.employeeId ?? ""}
+                    onChange={(e) => updateRow(entry.id, { employeeId: e.target.value || null })}
+                  >
+                    <option value="">Unassigned</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="date"
+                    className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                    defaultValue={toDateInput(entry.date)}
+                    onBlur={(e) => updateRow(entry.id, { date: e.target.value || null })}
+                  />
+                </td>
                 <td className="px-3 py-1.5">
                   <input
                     className="w-full border-0 bg-transparent text-sm focus:outline-none"
@@ -104,6 +149,28 @@ export function WorksheetTab({
               </tr>
             ))}
             <tr className="border-t border-neutral-100 bg-neutral-50/50">
+              <td className="px-3 py-1.5">
+                <select
+                  className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                  value={draft.employeeId}
+                  onChange={(e) => setDraft((d) => ({ ...d, employeeId: e.target.value }))}
+                >
+                  <option value="">Select person...</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-3 py-1.5">
+                <input
+                  type="date"
+                  className="w-full border-0 bg-transparent text-sm focus:outline-none"
+                  value={draft.date}
+                  onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+                />
+              </td>
               <td className="px-3 py-1.5">
                 <input
                   className="w-full border-0 bg-transparent text-sm focus:outline-none"

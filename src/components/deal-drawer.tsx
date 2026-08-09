@@ -8,8 +8,9 @@ import { SaveContactModal } from "@/components/save-contact-modal";
 import { ConsultationTab } from "@/components/consultation-tab";
 import { WorksheetTab } from "@/components/worksheet-tab";
 import { ReimbursementsTab } from "@/components/reimbursements-tab";
+import { BillablesTab } from "@/components/billables-tab";
 
-type TabKey = "details" | "consultation" | "worksheet" | "reimbursements";
+type TabKey = "details" | "consultation" | "worksheet" | "reimbursements" | "billables";
 
 export function DealDrawer({
   dealId,
@@ -86,6 +87,7 @@ export function DealDrawer({
     ...(showConsultationTab ? [{ key: "consultation" as const, label: "Consultation" }] : []),
     ...(showInProgressTabs ? [{ key: "worksheet" as const, label: "Services Worksheet" }] : []),
     ...(showInProgressTabs ? [{ key: "reimbursements" as const, label: "Reimbursements" }] : []),
+    ...(showInProgressTabs ? [{ key: "billables" as const, label: "Total Billables" }] : []),
   ];
 
   return (
@@ -295,6 +297,10 @@ export function DealDrawer({
 
               {activeTab === "reimbursements" && (
                 <ReimbursementsTab deal={deal} refetch={refetch} />
+              )}
+
+              {activeTab === "billables" && (
+                <BillablesTab deal={deal} patchDeal={patchDeal} refetch={refetch} />
               )}
             </div>
           </>
