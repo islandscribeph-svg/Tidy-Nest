@@ -21,7 +21,7 @@ A new lead isn't a full contact until required fields (name + email-or-phone + s
    npm install
    ```
 
-2. **Database.** Any Postgres works, including a free [Supabase](https://supabase.com) project (Project Settings → Database → Connection string). Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `SESSION_SECRET` (`openssl rand -base64 32`), and `LEAD_INTAKE_SECRET`.
+2. **Database.** Any Postgres works, including a free [Supabase](https://supabase.com) project — use its "Connect" dialog → **ORM** tab (Prisma) to get both connection strings it expects. Copy `.env.example` to `.env` and fill in `DATABASE_URL` (pooled, port 6543), `DIRECT_URL` (direct, port 5432 — used only for running migrations), `SESSION_SECRET` (`openssl rand -base64 32`), and `LEAD_INTAKE_SECRET`.
 
 3. **Run migrations**
    ```bash
