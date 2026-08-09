@@ -32,7 +32,11 @@ export async function GET(req: NextRequest, { params }: Params) {
     prisma.worksheetEntry.findMany({
       where: { employeeId: id, date: range },
       orderBy: { date: "asc" },
-      include: { deal: { select: { id: true, title: true } } },
+      include: {
+        deal: {
+          select: { id: true, title: true, contact: { select: { firstName: true, lastName: true } } },
+        },
+      },
     }),
   ]);
 
@@ -52,6 +56,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     source: "project" as const,
     dealId: e.deal.id,
     dealTitle: e.deal.title,
+    contactName: [e.deal.contact.firstName, e.deal.contact.lastName].filter(Boolean).join(" "),
   }));
 
   const totalHours =

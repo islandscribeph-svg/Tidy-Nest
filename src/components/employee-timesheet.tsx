@@ -21,6 +21,7 @@ type ProjectRow = {
   source: "project";
   dealId: string;
   dealTitle: string | null;
+  contactName: string;
 };
 
 type TimesheetResponse = {
@@ -213,7 +214,10 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
                   <td className="px-3 py-1.5 text-neutral-600">{row.date ? toDateInput(row.date) : "—"}</td>
                   <td className="px-3 py-1.5 text-neutral-600">
                     {row.description}{" "}
-                    <span className="text-xs text-neutral-400">via {row.dealTitle || "Untitled project"}</span>
+                    <span className="text-xs text-neutral-400">
+                      via {row.dealTitle || "Untitled project"}
+                      {row.contactName ? ` - ${row.contactName}` : ""}
+                    </span>
                   </td>
                   <td className="px-3 py-1.5 text-right text-neutral-600">{row.hours}</td>
                   <td className="px-2 py-1.5"></td>
