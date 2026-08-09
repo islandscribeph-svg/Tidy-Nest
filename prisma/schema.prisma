@@ -1,0 +1,189 @@
+// Tidy Nest CRM/PM — Prisma schema
+// See /root/.claude/plans (or PLAN.md at repo root) for the design rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+// Pipeline stage. NEW_LEAD..CLOSED is the "happy path"; UNQUALIFIED and DEAD
+// are exit states reachable from any stage (they are not steps after CLOSED).
+enum Stage {
+  NEW_LEAD
+  CONTACTED
+  CONSULTATION
+  IN_PROGRESS
+  CLOSED
+  UNQUALIFIED
+  DEAD
+}
+
+enum ServiceType {
+  ORGANIZING
+  RELOCATION
+  HOME_MANAGEMENT
+  HOLIDAY_BOX
+  MAINTENANCE
+  OTHER
+}
+
+// Normalized source categories. sourceDetail on Deal carries the free-text
+// specifics (e.g. "Referral- Sabbath") without polluting this enum, so
+// reporting on `source` stays reliable while detail isn't lost.
+enum Source {
+  SOCIAL_MEDIA
+  REFERRAL
+  MAGAZINE
+  ONLINE_AD
+  GOOGLE
+  FRIEND
+  WEBSITE
+  OTHER
+  UNKNOWN
+}
+
+enum FileType {
+  PROPOSAL
+  CONTRACT
+  INVOICE
+  CONSULT_INVOICE
+  OTHER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+
+  assignedDeals Deal[]  @relation("DealAssignee")
+  notes         Note[]
+  tasks         Task[]  @relation("TaskAssignee")
+}
+
+model Contact {
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String?
+  email         String?
+  phone         String?
+  streetAddress String?
+  city          String?
+  state         String?
+  company       String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deals Deal[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Deal {
+  id       String @id @default(cuid())
+  contact  Contact @relation(fields: [contactId], references: [id])
+  contactId String
+
+  stage        Stage   @default(NEW_LEAD)
+  subStatus    String? // free text, scoped per stage (e.g. "Initial Email Sent")
+  contactSaved Boolean @default(false) // true once required contact fields have been confirmed via the Save Contact flow
+
+  subject           String?
+  serviceType       ServiceType?
+  detailsOfProject  String?
+
+  source       Source  @default(UNKNOWN)
+  sourceDetail String?
+
+  estimatedDealValue Decimal? @db.Decimal(10, 2)
+  closedDealValue    Decimal? @db.Decimal(10, 2)
+  consultFee         Decimal? @db.Decimal(10, 2)
+
+  consultDate      DateTime?
+  projectStartDate DateTime?
+  dateClosed       DateTime?
+
+  // QuickBooks linkage (Phase 3) — stored now so the fields exist, sync deferred
+  invoiceNumber       String?
+  qbDepositPaymentLink String?
+  qbFinalPaymentLink   String?
+
+  assignedTo   User?   @relation("DealAssignee", fields: [assignedToId], references: [id])
+  assignedToId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notes    Note[]
+  files    File[]
+  projects Project[]
+
+  @@index([stage])
+  @@index([contactId])
+}
+
+model Project {
+  id              String    @id @default(cuid())
+  deal            Deal      @relation(fields: [dealId], references: [id])
+  dealId          String
+  projectDateTime DateTime?
+  worksheetLink   String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  tasks Task[]
+}
+
+model Task {
+  id         String     @id @default(cuid())
+  project    Project    @relation(fields: [projectId], references: [id])
+  projectId  String
+  title      String
+  status     TaskStatus @default(TODO)
+  dueDate    DateTime?
+  sortOrder  Int        @default(0)
+  assignee   User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assigneeId String?
+  createdAt  DateTime   @default(now())
+}
+
+// Activity/note timeline entry. Attached to a Deal and/or Contact so both
+// the pipeline item and the underlying person keep a shared audit trail.
+model Note {
+  id        String   @id @default(cuid())
+  body      String
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+  dealId    String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+  createdAt DateTime @default(now())
+}
+
+model File {
+  id         String   @id @default(cuid())
+  deal       Deal     @relation(fields: [dealId], references: [id])
+  dealId     String
+  type       FileType @default(OTHER)
+  url        String
+  fileName   String
+  uploadedAt DateTime @default(now())
+}
