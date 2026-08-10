@@ -93,8 +93,8 @@ export function DealDrawer({
   ];
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/20">
-      <div className="flex h-full w-full max-w-2xl flex-col bg-white shadow-xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
           <h2 className="text-sm font-semibold text-neutral-900">Project details</h2>
           <button onClick={onClose} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100">
