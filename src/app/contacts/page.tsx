@@ -1,11 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { STAGE_LABELS, SERVICE_TYPE_LABELS } from "@/lib/pipeline";
+import { SERVICE_TYPE_LABELS } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
 
+function formatDate(d: Date | null) {
+  if (!d) return null;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
 export default async function ContactsPage() {
   const contacts = await prisma.contact.findMany({
-    include: { deals: { select: { id: true, stage: true, serviceType: true } } },
+    include: {
+      deals: {
+        select: { id: true, title: true, serviceType: true, projectStartDate: true },
+        orderBy: { createdAt: "desc" },
+      },
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -20,26 +30,42 @@ export default async function ContactsPage() {
               <th className="px-4 py-2 font-medium">Email</th>
               <th className="px-4 py-2 font-medium">Phone</th>
               <th className="px-4 py-2 font-medium">City / State</th>
-              <th className="px-4 py-2 font-medium">Deals</th>
+              <th className="px-4 py-2 font-medium">Projects</th>
             </tr>
           </thead>
           <tbody>
             {contacts.map((c) => (
               <tr key={c.id} className="border-b border-neutral-100 last:border-0">
-                <td className="px-4 py-2 font-medium text-neutral-900">
+                <td className="px-4 py-2 font-medium text-neutral-900 align-top">
                   {c.firstName} {c.lastName}
                 </td>
-                <td className="px-4 py-2 text-neutral-600">{c.email || "—"}</td>
-                <td className="px-4 py-2 text-neutral-600">{c.phone || "—"}</td>
-                <td className="px-4 py-2 text-neutral-600">
+                <td className="px-4 py-2 text-neutral-600 align-top">{c.email || "—"}</td>
+                <td className="px-4 py-2 text-neutral-600 align-top">{c.phone || "—"}</td>
+                <td className="px-4 py-2 text-neutral-600 align-top">
                   {[c.city, c.state].filter(Boolean).join(", ") || "—"}
                 </td>
-                <td className="px-4 py-2 text-neutral-600">
-                  {c.deals.length === 0
-                    ? "—"
-                    : c.deals
-                        .map((d) => `${STAGE_LABELS[d.stage]}${d.serviceType ? ` (${SERVICE_TYPE_LABELS[d.serviceType]})` : ""}`)
-                        .join(", ")}
+                <td className="px-4 py-2 text-neutral-600 align-top">
+                  {c.deals.length === 0 ? (
+                    "—"
+                  ) : (
+                    <ul className="space-y-1">
+                      {c.deals.map((d) => {
+                        const date = formatDate(d.projectStartDate);
+                        return (
+                          <li key={d.id}>
+                            {d.serviceType ? (
+                              <span className="font-medium text-neutral-800">{SERVICE_TYPE_LABELS[d.serviceType]}</span>
+                            ) : (
+                              <span className="text-neutral-400">No service</span>
+                            )}
+                            {" — "}
+                            {d.title || "Untitled project"}
+                            {date && <span className="text-neutral-400"> ({date})</span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </td>
               </tr>
             ))}
