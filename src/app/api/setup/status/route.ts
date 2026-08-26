@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
     return corsJson({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [users, deals, contacts] = await Promise.all([
-    prisma.user.count(),
+  const [userEmails, deals, contacts] = await Promise.all([
+    prisma.user.findMany({ select: { email: true, name: true, role: true }, orderBy: { email: "asc" } }),
     prisma.deal.count(),
     prisma.contact.count(),
   ]);
 
-  return corsJson({ users, deals, contacts });
+  return corsJson({ users: userEmails.length, userEmails, deals, contacts });
 }

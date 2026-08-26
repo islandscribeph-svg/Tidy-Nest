@@ -115,8 +115,20 @@ curl -X POST https://<your-deploy>.vercel.app/api/setup/import \
 curl -X POST https://<your-deploy>.vercel.app/api/setup/seed-employees \
   -H "x-setup-key: $SESSION_SECRET"
 
-# Check current state at any time
+# Check current state at any time (includes each user's email, for #4 below)
 curl https://<your-deploy>.vercel.app/api/setup/status -H "x-setup-key: $SESSION_SECRET"
 ```
+
+### Forgot a login password?
+
+`/api/setup/reset-password` resets any user's password by email — unlike the others it does **not** self-disable, since resetting a password should stay possible indefinitely, not just on a fresh deploy:
+
+```bash
+curl -X POST https://<your-deploy>.vercel.app/api/setup/reset-password \
+  -H "x-setup-key: $SESSION_SECRET" -H "Content-Type: application/json" \
+  -d '{"email":"you@tidynest.com","newPassword":"choose-a-new-real-password"}'
+```
+
+This doesn't widen access beyond what `SESSION_SECRET` already grants: it's the same key that signs session cookies, so anyone holding it could forge a valid login directly without this endpoint.
 
 Local dev can still use `npm run db:seed` / `npm run import:monday` directly against a local or dev database if you prefer — the `/api/setup/*` routes exist specifically so a fresh Vercel+Supabase deploy can be bootstrapped without shell access to the production database.
