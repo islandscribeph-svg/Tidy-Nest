@@ -7,17 +7,17 @@ export function DealCard({ deal }: { deal: DealSummary }) {
   return (
     <div className="rounded-md border border-neutral-200 bg-white p-3 shadow-sm hover:border-neutral-300">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-neutral-900">{deal.title || "Untitled project"}</p>
+        <p className="text-sm font-semibold text-neutral-900">{name || "Unnamed contact"}</p>
         {!deal.contactSaved && (
           <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
             Needs info
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-xs text-neutral-500">{name || "Unnamed contact"}</p>
       {deal.serviceType && (
-        <p className="mt-1 text-xs text-neutral-400">{SERVICE_TYPE_LABELS[deal.serviceType]}</p>
+        <p className="mt-0.5 text-xs text-neutral-500">{SERVICE_TYPE_LABELS[deal.serviceType]}</p>
       )}
+      <p className="mt-1 text-xs text-neutral-400">{deal.title || "Untitled project"}</p>
       {deal.assignedTo && (
         <p className="mt-2 text-[11px] text-neutral-400">Assigned: {deal.assignedTo.name}</p>
       )}
