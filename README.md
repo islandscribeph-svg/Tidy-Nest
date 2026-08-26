@@ -83,12 +83,6 @@ Creates a draft Contact + a `NEW_LEAD` Deal. Wire this into whatever handles the
 
 `/reports` shows deal counts by stage/service/source and win rate, with a CSV export button (`/api/reports/export`) for spreadsheet-style sharing — one-way export, not a live Google Sheets sync.
 
-## Calls dashboard
-
-`/calls` is a standalone dashboard (separate data model, not tied to Contacts/Deals) that replicates a weekly call-tracking report format: calls grouped by week, broken down by lead channel (Content/Ads/Cold Email/Referral) and Qualified/Unqualified/No-Show, with a free-text "Concerns" note per week.
-
-It's fed by a Google Calendar's private iCal feed rather than the CRM pipeline. To enable syncing, set `CALLS_CALENDAR_ICS_URL` to that calendar's **secret address in iCal format** (Google Calendar → gear icon → Settings → select the calendar under "Settings for my calendars" → "Secret address in iCal format"). Clicking **Sync from calendar** pulls new/updated events (roughly the last 26 weeks through 2 weeks out) and best-effort guesses each call's source/qualified/no-show from keywords in the event title/description — those guesses are just a starting point and stay freely editable per call; re-syncing never overwrites a manual correction, only the title/time/description if the calendar event itself changed.
-
 ## What's deliberately deferred
 
 Per the build plan, these are scoped for later phases rather than this initial build (the schema already has the relevant fields so they can be wired up without a data model change):
@@ -99,7 +93,7 @@ Per the build plan, these are scoped for later phases rather than this initial b
 
 ## Deploying
 
-Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your Supabase (or other) Postgres instance, plus `SESSION_SECRET` and `LEAD_INTAKE_SECRET`. Set `CALLS_CALENDAR_ICS_URL` too if you want the Calls dashboard's sync button to work (see above) — it's optional and the rest of the app works without it. The build (`npm run build`) runs `prisma migrate deploy` before `next build`, so every deploy automatically applies any pending schema migrations — nothing extra to run for that part.
+Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your Supabase (or other) Postgres instance, plus `SESSION_SECRET` and `LEAD_INTAKE_SECRET`. The build (`npm run build`) runs `prisma migrate deploy` before `next build`, so every deploy automatically applies any pending schema migrations — nothing extra to run for that part.
 
 ### First-time bootstrap on a fresh deploy
 

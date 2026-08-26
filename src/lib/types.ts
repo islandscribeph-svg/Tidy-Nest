@@ -1,4 +1,4 @@
-import type { Stage, ServiceType, Source, FileType, EmployeeType, CallSource, QualStatus } from "@prisma/client";
+import type { Stage, ServiceType, Source, FileType, EmployeeType } from "@prisma/client";
 
 export type ContactSummary = {
   id: string;
@@ -109,23 +109,6 @@ export type VendorEntry = {
   salesTax: string;
   sortOrder: number;
   items: ReimbursementItemEntry[];
-};
-
-export type CallEntryRow = {
-  id: string;
-  title: string;
-  description: string | null;
-  startTime: string;
-  weekStart: string;
-  source: CallSource;
-  qualified: QualStatus;
-  noShow: boolean;
-  notes: string | null;
-};
-
-export type CallWeekNoteRow = {
-  weekStart: string;
-  body: string;
 };
 
 export type DealDetail = DealSummary & {
