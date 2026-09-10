@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "tidynest_session";
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/leads/intake", "/api/setup"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+  "/api/auth/login",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/leads/intake",
+  "/api/setup",
+];
 
 function getSecret() {
   return new TextEncoder().encode(process.env.SESSION_SECRET ?? "");

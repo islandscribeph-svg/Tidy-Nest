@@ -83,6 +83,17 @@ Creates a draft Contact + a `NEW_LEAD` Deal. Wire this into whatever handles the
 
 `/reports` shows deal counts by stage/service/source and win rate, with a CSV export button (`/api/reports/export`) for spreadsheet-style sharing — one-way export, not a live Google Sheets sync.
 
+## Forgot password
+
+The login page's "Forgot password?" link emails a reset link via [Resend](https://resend.com):
+
+1. Sign up at resend.com (free tier: 3,000 emails/month, no card needed) and create an API key.
+2. Set `RESEND_API_KEY` in your env vars.
+3. **Recipient limits matter here.** Without a verified sending domain, Resend only delivers to the email address you signed up with — reset emails to your actual staff addresses won't arrive. To send to anyone, verify a domain (e.g. `tidynest.com`, or a subdomain like `mail.tidynest.com`) under Resend's Domains settings, which means adding a few DNS records there, then set `EMAIL_FROM` to an address on that domain (e.g. `"Tidy Nest <noreply@tidynest.com>"`).
+4. Locally, if `RESEND_API_KEY` is unset the reset link is just logged to the console instead of emailed, so the flow is testable without setting any of this up.
+
+Reset links expire after 1 hour and are single-use; requesting a new one invalidates any still-outstanding link.
+
 ## What's deliberately deferred
 
 Per the build plan, these are scoped for later phases rather than this initial build (the schema already has the relevant fields so they can be wired up without a data model change):

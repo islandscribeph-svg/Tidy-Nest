@@ -73,8 +73,22 @@ model User {
   role         Role     @default(STAFF)
   createdAt    DateTime @default(now())
 
-  assignedDeals Deal[] @relation("DealAssignee")
-  notes         Note[]
+  assignedDeals       Deal[]               @relation("DealAssignee")
+  notes               Note[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Forgot-password flow. Tokens are single-use (usedAt) and short-lived
+// (expiresAt); a fresh request invalidates any still-outstanding ones for
+// that user so only the latest emailed link works.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model Contact {
