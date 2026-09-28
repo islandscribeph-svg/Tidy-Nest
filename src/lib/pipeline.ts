@@ -100,6 +100,17 @@ export const MAIN_STAGES: Stage[] = STAGE_ORDER.filter((s) => !EXIT_STAGES.inclu
 const CONSULTATION_REACHED: Stage[] = ["CONSULTATION", "IN_PROGRESS", "CLOSED", "UNQUALIFIED", "DEAD"];
 const IN_PROGRESS_REACHED: Stage[] = ["IN_PROGRESS", "CLOSED", "UNQUALIFIED", "DEAD"];
 
+// The one date that best represents "when this project happened," not when
+// the record was created/imported: whichever of these is actually set,
+// preferring the most advanced milestone reached.
+export function projectDate(deal: {
+  dateClosed: string | null;
+  projectStartDate: string | null;
+  consultDate: string | null;
+}): string | null {
+  return deal.dateClosed ?? deal.projectStartDate ?? deal.consultDate ?? null;
+}
+
 export function hasReachedConsultation(stage: Stage): boolean {
   return CONSULTATION_REACHED.includes(stage);
 }

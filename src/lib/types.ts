@@ -22,6 +22,9 @@ export type DealSummary = {
   source: Source;
   estimatedDealValue: string | null;
   closedDealValue: string | null;
+  consultDate: string | null;
+  projectStartDate: string | null;
+  dateClosed: string | null;
   createdAt: string;
   updatedAt: string;
   contact: ContactSummary;
@@ -115,9 +118,6 @@ export type DealDetail = DealSummary & {
   detailsOfProject: string | null;
   sourceDetail: string | null;
   consultFee: string | null;
-  consultDate: string | null;
-  projectStartDate: string | null;
-  dateClosed: string | null;
   invoiceNumber: string | null;
   invoiceLink: string | null;
   consultInvoiceNumber: string | null;

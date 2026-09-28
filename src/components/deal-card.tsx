@@ -1,4 +1,4 @@
-import { STAGE_COLORS } from "@/lib/pipeline";
+import { STAGE_COLORS, projectDate } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -7,7 +7,8 @@ export function DealCard({ deal }: { deal: DealSummary }) {
   const name = [deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(" ") || "Unnamed contact";
   const label = deal.title ? `${name} - ${deal.title}` : name;
   const colors = STAGE_COLORS[deal.stage];
-  const date = dateFormatter.format(new Date(deal.createdAt));
+  const rawDate = projectDate(deal);
+  const date = rawDate ? dateFormatter.format(new Date(rawDate)) : null;
 
   return (
     <div
@@ -20,7 +21,7 @@ export function DealCard({ deal }: { deal: DealSummary }) {
           Needs info
         </span>
       )}
-      <span className="shrink-0 text-xs text-neutral-400">{date}</span>
+      {date && <span className="shrink-0 text-xs text-neutral-400">{date}</span>}
     </div>
   );
 }
