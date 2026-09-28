@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/pipeline", label: "Pipeline" },
   { href: "/calendar", label: "Calendar" },
   { href: "/contacts", label: "Contacts" },
   { href: "/employees", label: "Employees" },
-  { href: "/reports", label: "Reports" },
 ];
 
 export function NavBar({ userName, role }: { userName: string; role: string }) {

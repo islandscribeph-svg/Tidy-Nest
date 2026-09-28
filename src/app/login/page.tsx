@@ -26,7 +26,7 @@ export default function LoginPage() {
       setError(data.error ?? "Login failed");
       return;
     }
-    router.push("/pipeline");
+    router.push("/dashboard");
     router.refresh();
   }
 

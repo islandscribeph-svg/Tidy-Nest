@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS } from "@/lib/pipeline";
+import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, matchesDashboardFilters, DashboardFilters } from "@/lib/pipeline";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -10,14 +10,41 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
-export async function GET() {
+function parseFilters(url: URL): DashboardFilters {
+  const yearParam = url.searchParams.get("year");
+  const monthParam = url.searchParams.get("month");
+  return {
+    year: yearParam && yearParam !== "all" ? Number(yearParam) : "all",
+    month: monthParam && monthParam !== "all" ? Number(monthParam) : "all",
+    contactId: url.searchParams.get("contactId") || "all",
+    address: url.searchParams.get("address") || "",
+    title: url.searchParams.get("title") || "",
+  };
+}
+
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const deals = await prisma.deal.findMany({
+  const filters = parseFilters(req.nextUrl);
+
+  const allDeals = await prisma.deal.findMany({
     include: { contact: true, assignedTo: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
+
+  const deals = allDeals.filter((d) =>
+    matchesDashboardFilters(
+      {
+        title: d.title,
+        dateClosed: d.dateClosed?.toISOString() ?? null,
+        projectStartDate: d.projectStartDate?.toISOString() ?? null,
+        consultDate: d.consultDate?.toISOString() ?? null,
+        contact: d.contact,
+      },
+      filters,
+    ),
+  );
 
   const headers = [
     "First Name",

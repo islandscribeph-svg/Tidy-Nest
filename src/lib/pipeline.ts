@@ -111,6 +111,56 @@ export function projectDate(deal: {
   return deal.dateClosed ?? deal.projectStartDate ?? deal.consultDate ?? null;
 }
 
+export type DashboardFilters = {
+  year: number | "all";
+  month: number | "all"; // 1-12
+  contactId: string | "all";
+  address: string;
+  title: string;
+};
+
+export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
+  year: new Date().getUTCFullYear(),
+  month: new Date().getUTCMonth() + 1,
+  contactId: "all",
+  address: "",
+  title: "",
+};
+
+// Shared between the client-side Dashboard view and the server-side CSV
+// export so "what's on screen" and "what downloads" never drift apart.
+export function matchesDashboardFilters(
+  deal: {
+    title: string | null;
+    dateClosed: string | null;
+    projectStartDate: string | null;
+    consultDate: string | null;
+    contact: { id: string; streetAddress: string | null; city: string | null; state: string | null };
+  },
+  filters: DashboardFilters,
+): boolean {
+  if (filters.year !== "all" || filters.month !== "all") {
+    const raw = projectDate(deal);
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (filters.year !== "all" && d.getUTCFullYear() !== filters.year) return false;
+    if (filters.month !== "all" && d.getUTCMonth() + 1 !== filters.month) return false;
+  }
+  if (filters.contactId !== "all" && deal.contact.id !== filters.contactId) return false;
+  if (filters.address.trim()) {
+    const q = filters.address.trim().toLowerCase();
+    const hay = [deal.contact.streetAddress, deal.contact.city, deal.contact.state]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  if (filters.title.trim() && !(deal.title ?? "").toLowerCase().includes(filters.title.trim().toLowerCase())) {
+    return false;
+  }
+  return true;
+}
+
 export function hasReachedConsultation(stage: Stage): boolean {
   return CONSULTATION_REACHED.includes(stage);
 }
