@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SERVICE_TYPE_LABELS, SOURCE_LABELS } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
+import { SelectButton } from "@/components/ui/select-button";
 
 export function NewLeadModal({
   onClose,
@@ -90,28 +91,20 @@ export function NewLeadModal({
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Service">
-              <select
+              <SelectButton
                 value={form.serviceType}
-                onChange={(e) => set("serviceType", e.target.value)}
-                className="input"
-              >
-                <option value="">Select...</option>
-                {Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => set("serviceType", value)}
+                placeholder="Select..."
+                options={Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+              />
             </Field>
             <Field label="Source">
-              <select value={form.source} onChange={(e) => set("source", e.target.value)} className="input">
-                <option value="">Select...</option>
-                {Object.entries(SOURCE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <SelectButton
+                value={form.source}
+                onChange={(value) => set("source", value)}
+                placeholder="Select..."
+                options={Object.entries(SOURCE_LABELS).map(([value, label]) => ({ value, label }))}
+              />
             </Field>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}

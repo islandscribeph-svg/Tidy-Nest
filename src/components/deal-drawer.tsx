@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, SUB_STATUS_SUGGESTIONS, hasReachedConsultation, hasReachedInProgress } from "@/lib/pipeline";
 import type { DealDetail, DealSummary } from "@/lib/types";
 import { SaveContactModal } from "@/components/save-contact-modal";
+import { SelectButton } from "@/components/ui/select-button";
 import { ConsultationTab } from "@/components/consultation-tab";
 import { WorksheetTab } from "@/components/worksheet-tab";
 import { ReimbursementsTab } from "@/components/reimbursements-tab";
@@ -157,17 +158,11 @@ export function DealDrawer({
                 <div className="space-y-6">
                   <section className="space-y-3">
                     <FieldRow label="Stage">
-                      <select
-                        className="input"
+                      <SelectButton
                         value={deal.stage}
-                        onChange={(e) => patchDeal({ stage: e.target.value })}
-                      >
-                        {Object.entries(STAGE_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => patchDeal({ stage: value })}
+                        options={Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }))}
+                      />
                     </FieldRow>
 
                     <FieldRow label="Sub-status">
@@ -185,47 +180,32 @@ export function DealDrawer({
                     </FieldRow>
 
                     <FieldRow label="Service">
-                      <select
-                        className="input"
+                      <SelectButton
                         value={deal.serviceType ?? ""}
-                        onChange={(e) => patchDeal({ serviceType: e.target.value || null })}
-                      >
-                        <option value="">—</option>
-                        {Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => patchDeal({ serviceType: value || null })}
+                        placeholder="—"
+                        options={Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+                      />
                     </FieldRow>
 
                     <FieldRow label="Source">
-                      <select
-                        className="input"
+                      <SelectButton
                         value={deal.source}
-                        onChange={(e) => patchDeal({ source: e.target.value })}
-                      >
-                        {Object.entries(SOURCE_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => patchDeal({ source: value })}
+                        options={Object.entries(SOURCE_LABELS).map(([value, label]) => ({ value, label }))}
+                      />
                     </FieldRow>
 
                     <FieldRow label="Assigned to">
-                      <select
-                        className="input"
+                      <SelectButton
                         value={deal.assignedTo?.id ?? ""}
-                        onChange={(e) => patchDeal({ assignedToId: e.target.value || null })}
-                      >
-                        <option value="">Unassigned</option>
-                        {users.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => patchDeal({ assignedToId: value || null })}
+                        placeholder="Unassigned"
+                        options={[
+                          { value: "", label: "Unassigned" },
+                          ...users.map((u) => ({ value: u.id, label: u.name })),
+                        ]}
+                      />
                     </FieldRow>
 
                     <FieldRow label="Estimated value">

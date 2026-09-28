@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { EmployeeSummary } from "@/lib/types";
+import { SelectButton } from "@/components/ui/select-button";
 
 const TYPE_LABELS = { EMPLOYEE: "Employee", CONTRACTOR: "Contractor" } as const;
 
@@ -119,14 +120,14 @@ function AddEmployeeModal({
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-neutral-600">Type</span>
-            <select
+            <SelectButton
               value={type}
-              onChange={(e) => setType(e.target.value as "EMPLOYEE" | "CONTRACTOR")}
-              className="input"
-            >
-              <option value="CONTRACTOR">Contractor</option>
-              <option value="EMPLOYEE">Employee</option>
-            </select>
+              onChange={(value) => setType(value as "EMPLOYEE" | "CONTRACTOR")}
+              options={[
+                { value: "CONTRACTOR", label: "Contractor" },
+                { value: "EMPLOYEE", label: "Employee" },
+              ]}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-neutral-600">Hourly rate ($)</span>

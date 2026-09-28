@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SERVICE_TYPE_LABELS } from "@/lib/pipeline";
 import type { DealDetail, DealSummary } from "@/lib/types";
+import { SelectButton } from "@/components/ui/select-button";
 
 type DuplicateCandidate = {
   id: string;
@@ -149,14 +150,12 @@ export function SaveContactModal({
               <input value={form.company} onChange={(e) => set("company", e.target.value)} className="input" />
             </Field>
             <Field label="Service type" required error={missingField === "serviceType"}>
-              <select value={form.serviceType} onChange={(e) => set("serviceType", e.target.value)} className="input">
-                <option value="">Select...</option>
-                {Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <SelectButton
+                value={form.serviceType}
+                onChange={(value) => set("serviceType", value)}
+                placeholder="Select..."
+                options={Object.entries(SERVICE_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+              />
             </Field>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
