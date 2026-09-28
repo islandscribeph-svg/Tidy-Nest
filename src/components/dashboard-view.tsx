@@ -10,10 +10,14 @@ import {
   SOURCE_LABELS,
   DEFAULT_DASHBOARD_FILTERS,
   matchesDashboardFilters,
+  projectDate,
   type DashboardFilters,
 } from "@/lib/pipeline";
+import { CATEGORICAL_COLORS, STAGE_HEX, sequentialColorFor } from "@/lib/chart-colors";
 import type { DealSummary } from "@/lib/types";
 import { SelectButton } from "@/components/ui/select-button";
+import { DonutChart } from "@/components/charts/donut-chart";
+import { LineChart } from "@/components/charts/line-chart";
 import type { Stage, ServiceType, Source } from "@prisma/client";
 
 const MONTH_NAMES = [
@@ -56,7 +60,7 @@ export function DashboardView({ deals }: { deals: DealSummary[] }) {
   const years = useMemo(() => {
     const set = new Set<number>([new Date().getUTCFullYear()]);
     for (const d of deals) {
-      const raw = d.dateClosed ?? d.projectStartDate ?? d.consultDate;
+      const raw = projectDate(d);
       if (raw) set.add(new Date(raw).getUTCFullYear());
     }
     return [...set].sort((a, b) => b - a);
@@ -85,6 +89,52 @@ export function DashboardView({ deals }: { deals: DealSummary[] }) {
 
     return { total, closedWon, resolved, winRate, activePipelineValue, closedWonRevenue, byStage, byService, bySource };
   }, [filteredDeals]);
+
+  // Trend chart intentionally ignores the Month filter (a single month has no
+  // "trend"), but still respects Client/Address/Title. When a specific year
+  // is chosen it plots that year's 12 months; "All Years" aggregates each
+  // calendar month across every year instead, showing seasonality.
+  const monthlyTrend = useMemo(() => {
+    const scoped = deals.filter((d) => matchesDashboardFilters(d, { ...filters, year: "all", month: "all" }));
+    const counts = new Array(12).fill(0);
+    for (const d of scoped) {
+      const raw = projectDate(d);
+      if (!raw) continue;
+      const date = new Date(raw);
+      if (filters.year !== "all" && date.getUTCFullYear() !== filters.year) continue;
+      counts[date.getUTCMonth()] += 1;
+    }
+    return MONTH_NAMES.map((name, i) => ({ label: name.slice(0, 3), value: counts[i] }));
+  }, [deals, filters]);
+
+  const serviceDonutData = useMemo(
+    () =>
+      Object.entries(SERVICE_TYPE_LABELS).map(([key, label], i) => ({
+        label,
+        value: stats.byService[key as ServiceType] ?? 0,
+        color: CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length],
+      })),
+    [stats.byService],
+  );
+
+  const sourceRows = useMemo(() => {
+    const entries = Object.entries(SOURCE_LABELS).map(([key, label]) => ({
+      label,
+      count: stats.bySource[key as Source] ?? 0,
+    }));
+    const rankByCount = [...entries]
+      .map((e, i) => i)
+      .sort((a, b) => entries[a].count - entries[b].count);
+    const rank = new Map<number, number>();
+    rankByCount.forEach((entryIndex, order) => rank.set(entryIndex, order));
+    return entries.map((e, i) => ({
+      label: e.label,
+      count: e.count,
+      color: sequentialColorFor(rank.get(i) ?? 0, entries.length),
+    }));
+  }, [stats.bySource]);
+
+  const stageRows = STAGE_ORDER.map((s) => ({ label: STAGE_LABELS[s], count: stats.byStage[s] ?? 0, color: STAGE_HEX[s] }));
 
   const exportParams = new URLSearchParams({
     year: String(filters.year),
@@ -175,48 +225,67 @@ export function DashboardView({ deals }: { deals: DealSummary[] }) {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          icon={<TrendingUp size={16} className="text-neutral-400" />}
+          icon={<TrendingUp size={16} />}
+          iconClass="bg-emerald-50 text-emerald-600"
           label="Win Rate"
           value={`${stats.winRate}%`}
           sub={`${stats.closedWon} won · ${stats.resolved} resolved (Won + Dead + Unqualified)`}
         />
         <StatCard
-          icon={<Briefcase size={16} className="text-neutral-400" />}
+          icon={<Briefcase size={16} />}
+          iconClass="bg-sky-50 text-sky-600"
           label="Total Filtered Deals"
           value={String(stats.total)}
           sub={`${deals.length} total projects in company CRM`}
         />
         <StatCard
-          icon={<Building2 size={16} className="text-neutral-400" />}
+          icon={<Building2 size={16} />}
+          iconClass="bg-amber-50 text-amber-600"
           label="Active Pipeline Value"
           value={money(stats.activePipelineValue)}
           sub="Open leads & in-progress contracts"
         />
         <StatCard
-          icon={<CheckCircle2 size={16} className="text-neutral-400" />}
+          icon={<CheckCircle2 size={16} />}
+          iconClass="bg-violet-50 text-violet-600"
           label="Closed Won Revenue"
           value={money(stats.closedWonRevenue)}
           sub={`${stats.closedWon} completed project(s)`}
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 lg:col-span-2">
+          <div className="mb-1 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-800">Deals Over Time</h3>
+            <span className="text-xs text-neutral-400">
+              {filters.year === "all" ? "All years, by month" : `${filters.year}, by month`}
+            </span>
+          </div>
+          <p className="mb-2 text-[11px] text-neutral-400">Independent of the Month filter above.</p>
+          <LineChart data={monthlyTrend} />
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-white p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-800">Deals by Service Type</h3>
+            <span className="text-xs text-neutral-400">{Object.keys(SERVICE_TYPE_LABELS).length} types</span>
+          </div>
+          <DonutChart data={serviceDonutData} centerLabel="deals" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BreakdownPanel
           title="Deals by Stage"
           countLabel={`${stats.total} total`}
-          rows={STAGE_ORDER.map((s) => [STAGE_LABELS[s], stats.byStage[s] ?? 0])}
-          total={stats.total}
-        />
-        <BreakdownPanel
-          title="Deals by Service Type"
-          countLabel={`${Object.keys(SERVICE_TYPE_LABELS).length} types`}
-          rows={Object.entries(SERVICE_TYPE_LABELS).map(([k, label]) => [label, stats.byService[k as ServiceType] ?? 0])}
+          rows={stageRows}
           total={stats.total}
         />
         <BreakdownPanel
           title="Deals by Lead Source"
           countLabel={`${Object.keys(SOURCE_LABELS).length} sources`}
-          rows={Object.entries(SOURCE_LABELS).map(([k, label]) => [label, stats.bySource[k as Source] ?? 0])}
+          rows={sourceRows}
           total={stats.total}
         />
       </div>
@@ -242,12 +311,24 @@ function FilterField({ label, children }: { label: string; children: React.React
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) {
+function StatCard({
+  icon,
+  iconClass,
+  label,
+  value,
+  sub,
+}: {
+  icon: React.ReactNode;
+  iconClass: string;
+  label: string;
+  value: string;
+  sub: string;
+}) {
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-neutral-500">{label}</p>
-        {icon}
+        <span className={`flex h-7 w-7 items-center justify-center rounded-full ${iconClass}`}>{icon}</span>
       </div>
       <p className="mt-1 text-2xl font-semibold text-neutral-900">{value}</p>
       <p className="mt-1 text-xs text-neutral-400">{sub}</p>
@@ -263,7 +344,7 @@ function BreakdownPanel({
 }: {
   title: string;
   countLabel: string;
-  rows: [string, number][];
+  rows: { label: string; count: number; color: string }[];
   total: number;
 }) {
   return (
@@ -273,18 +354,22 @@ function BreakdownPanel({
         <span className="text-xs text-neutral-400">{countLabel}</span>
       </div>
       <div className="space-y-3">
-        {rows.map(([label, count]) => {
-          const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        {rows.map((row) => {
+          const percent = total > 0 ? Math.round((row.count / total) * 100) : 0;
           return (
-            <div key={label}>
-              <div className="mb-1 flex items-baseline justify-between text-sm">
-                <span className="text-neutral-700">{label}</span>
+            <div key={row.label}>
+              <div className="mb-1 flex items-center gap-2 text-sm">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
+                <span className="flex-1 text-neutral-700">{row.label}</span>
                 <span className="text-neutral-500">
-                  <span className="font-medium text-neutral-900">{count}</span> ({percent}%)
+                  <span className="font-medium text-neutral-900">{row.count}</span> ({percent}%)
                 </span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full rounded-full bg-neutral-800" style={{ width: `${percent}%` }} />
+                <div
+                  className="h-full rounded-full transition-[width]"
+                  style={{ width: `${percent}%`, backgroundColor: row.color }}
+                />
               </div>
             </div>
           );
