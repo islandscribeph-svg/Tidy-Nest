@@ -215,6 +215,27 @@ export function summarizeMondayRecords(records: ParsedRecord[]) {
   return { total: records.length, byStage, uniqueContacts };
 }
 
+// Deletes every Deal/Contact (and everything hanging off a Deal). Employees,
+// Users, and TimesheetEntries are untouched -- they aren't tied to Deals/Contacts.
+export async function wipeAllDealsAndContacts(prisma: PrismaClient) {
+  return prisma.$transaction(async (tx) => {
+    const dealCountBefore = await tx.deal.count();
+    const contactCountBefore = await tx.contact.count();
+
+    await tx.reimbursementItem.deleteMany({});
+    await tx.reimbursementVendor.deleteMany({});
+    await tx.additionalCharge.deleteMany({});
+    await tx.checklistItem.deleteMany({});
+    await tx.worksheetEntry.deleteMany({});
+    await tx.note.deleteMany({});
+    await tx.file.deleteMany({});
+    await tx.deal.deleteMany({});
+    await tx.contact.deleteMany({});
+
+    return { dealsWiped: dealCountBefore, contactsWiped: contactCountBefore };
+  });
+}
+
 export async function importMondayRecords(prisma: PrismaClient, records: ParsedRecord[]) {
   const contactIdByKey = new Map<string, string>();
   let created = 0;

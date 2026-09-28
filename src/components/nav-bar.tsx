@@ -20,12 +20,14 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
     router.refresh();
   }
 
+  const links = role === "ADMIN" ? [...LINKS, { href: "/settings", label: "Settings" }] : LINKS;
+
   return (
     <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
       <div className="flex items-center gap-8">
         <span className="text-sm font-semibold tracking-tight text-neutral-900">Tidy Nest</span>
         <nav className="flex gap-1">
-          {LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

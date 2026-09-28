@@ -144,7 +144,9 @@ This doesn't widen access beyond what `SESSION_SECRET` already grants: it's the 
 
 ### Replacing all data with a fresh spreadsheet export
 
-`/api/setup/reimport` **deletes every Deal and Contact** (and everything hanging off a Deal — notes, checklist items, worksheet entries, reimbursements, additional charges) and reloads from a new `.xlsx` export, using the same mapping as `/api/setup/import`. Employee and User (login) records are untouched. Unlike the other setup routes this doesn't self-disable — re-syncing from a fresh export is meant to be repeatable — so on top of the `x-setup-key` gate it also requires a literal `confirm=WIPE` field as a second safety check against firing it by accident:
+Any logged-in Admin can do this from inside the app: **Settings** page → **Replace all data** → choose the new `.xlsx`, type `WIPE`, click the button. This is the same operation as `/api/setup/reimport` below, just gated by a normal Admin session instead of `SESSION_SECRET`, so day-to-day resyncs don't need Vercel access at all.
+
+The underlying `/api/setup/reimport` route (used for first-time bootstrap, or scripting) **deletes every Deal and Contact** (and everything hanging off a Deal — notes, checklist items, worksheet entries, reimbursements, additional charges) and reloads from a new `.xlsx` export, using the same mapping as `/api/setup/import`. Employee and User (login) records are untouched. Unlike the other setup routes this doesn't self-disable — re-syncing from a fresh export is meant to be repeatable — so on top of the `x-setup-key` gate it also requires a literal `confirm=WIPE` field as a second safety check against firing it by accident:
 
 ```bash
 curl -X POST https://<your-deploy>.vercel.app/api/setup/reimport \

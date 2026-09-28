@@ -2,7 +2,12 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSetupKey } from "@/lib/setup-auth";
 import { corsJson, corsPreflight } from "@/lib/cors";
-import { parseMondayWorkbook, summarizeMondayRecords, importMondayRecords } from "@/lib/monday-import";
+import {
+  parseMondayWorkbook,
+  summarizeMondayRecords,
+  importMondayRecords,
+  wipeAllDealsAndContacts,
+} from "@/lib/monday-import";
 
 // Destructive, repeatable reimport: wipes every Deal/Contact (and everything
 // hanging off a Deal) and reloads from a fresh Monday export. Unlike the
@@ -37,22 +42,7 @@ export async function POST(req: NextRequest) {
   const records = await parseMondayWorkbook(buffer);
   const summary = summarizeMondayRecords(records);
 
-  const wiped = await prisma.$transaction(async (tx) => {
-    const dealCountBefore = await tx.deal.count();
-    const contactCountBefore = await tx.contact.count();
-
-    await tx.reimbursementItem.deleteMany({});
-    await tx.reimbursementVendor.deleteMany({});
-    await tx.additionalCharge.deleteMany({});
-    await tx.checklistItem.deleteMany({});
-    await tx.worksheetEntry.deleteMany({});
-    await tx.note.deleteMany({});
-    await tx.file.deleteMany({});
-    await tx.deal.deleteMany({});
-    await tx.contact.deleteMany({});
-
-    return { dealsWiped: dealCountBefore, contactsWiped: contactCountBefore };
-  });
+  const wiped = await wipeAllDealsAndContacts(prisma);
 
   const result = await importMondayRecords(prisma, records);
 
