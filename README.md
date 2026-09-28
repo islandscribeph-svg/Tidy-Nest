@@ -142,4 +142,17 @@ curl -X POST https://<your-deploy>.vercel.app/api/setup/reset-password \
 
 This doesn't widen access beyond what `SESSION_SECRET` already grants: it's the same key that signs session cookies, so anyone holding it could forge a valid login directly without this endpoint.
 
+### Replacing all data with a fresh spreadsheet export
+
+`/api/setup/reimport` **deletes every Deal and Contact** (and everything hanging off a Deal — notes, checklist items, worksheet entries, reimbursements, additional charges) and reloads from a new `.xlsx` export, using the same mapping as `/api/setup/import`. Employee and User (login) records are untouched. Unlike the other setup routes this doesn't self-disable — re-syncing from a fresh export is meant to be repeatable — so on top of the `x-setup-key` gate it also requires a literal `confirm=WIPE` field as a second safety check against firing it by accident:
+
+```bash
+curl -X POST https://<your-deploy>.vercel.app/api/setup/reimport \
+  -H "x-setup-key: $SESSION_SECRET" \
+  -F "confirm=WIPE" \
+  -F "file=@/path/to/Main_Nest.xlsx"
+```
+
+**This is destructive and not undoable** — anything entered directly in the live app since the last import (stage moves, notes, worksheet/reimbursement line items, saved contacts) that isn't reflected in the spreadsheet is gone once this runs. Only use it when the spreadsheet should fully replace what's live, not to pull in a few new leads on top of existing work.
+
 Local dev can still use `npm run db:seed` / `npm run import:monday` directly against a local or dev database if you prefer — the `/api/setup/*` routes exist specifically so a fresh Vercel+Supabase deploy can be bootstrapped without shell access to the production database.
