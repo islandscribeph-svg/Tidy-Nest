@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/api/auth/reset-password",
   "/api/leads/intake",
   "/api/setup",
+  "/brand",
 ];
 
 function getSecret() {

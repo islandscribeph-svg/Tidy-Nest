@@ -24,9 +24,10 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
   const links = role === "ADMIN" ? [...LINKS, { href: "/settings", label: "Settings" }] : LINKS;
 
   return (
-    <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+    <header className="flex items-center justify-between bg-[#5c6b3f] px-6 py-3">
       <div className="flex items-center gap-8">
-        <span className="text-sm font-semibold tracking-tight text-neutral-900">Tidy Nest</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/tidynest-logo-white.webp" alt="Tidy Nest" className="h-7 w-auto" />
         <nav className="flex gap-1">
           {links.map((link) => (
             <Link
@@ -34,8 +35,8 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
               href={link.href}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 pathname.startsWith(link.href)
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-600 hover:bg-neutral-100"
+                  ? "bg-white/15 text-white"
+                  : "text-white/75 hover:bg-white/10 hover:text-white"
               }`}
             >
               {link.label}
@@ -43,11 +44,11 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-3 text-sm text-neutral-500">
+      <div className="flex items-center gap-3 text-sm text-white/80">
         <span>
-          {userName} <span className="text-neutral-400">· {role}</span>
+          {userName} <span className="text-white/60">· {role}</span>
         </span>
-        <button onClick={handleLogout} className="rounded-md px-2 py-1 text-neutral-500 hover:bg-neutral-100">
+        <button onClick={handleLogout} className="rounded-md px-2 py-1 text-white/80 hover:bg-white/10">
           Sign out
         </button>
       </div>
