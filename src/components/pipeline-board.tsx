@@ -13,7 +13,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Stage } from "@prisma/client";
-import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS } from "@/lib/pipeline";
+import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS, STAGE_COLORS } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
 import { DealCard } from "@/components/deal-card";
 import { DealDrawer } from "@/components/deal-drawer";
@@ -148,30 +148,24 @@ function Column({
   compact?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
-  const isExit = stage === "DEAD" || stage === "UNQUALIFIED";
+  const colors = STAGE_COLORS[stage];
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex ${compact ? "flex-1" : "w-72 shrink-0"} flex-col rounded-lg border ${
-        isOver ? "border-neutral-400 bg-neutral-100" : "border-neutral-200 bg-neutral-100/60"
+      className={`flex ${compact ? "flex-1" : "w-80 shrink-0"} flex-col rounded-lg border ${
+        isOver ? "border-neutral-400 bg-neutral-100" : "border-neutral-200 bg-white"
       }`}
     >
-      <div className="flex items-center justify-between px-3 py-2">
-        <h2
-          className={`text-xs font-semibold uppercase tracking-wide ${
-            isExit ? "text-red-500" : "text-neutral-500"
-          }`}
-        >
-          {STAGE_LABELS[stage]}
-        </h2>
+      <div className={`flex items-center justify-between rounded-t-lg border-b px-3 py-2 ${colors.header}`}>
+        <h2 className={`text-xs font-semibold uppercase tracking-wide ${colors.text}`}>{STAGE_LABELS[stage]}</h2>
         <span className="rounded-full bg-white px-2 py-0.5 text-xs text-neutral-500">{deals.length}</span>
       </div>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3">
+      <div className="flex flex-1 flex-col divide-y divide-neutral-100 overflow-y-auto pb-2">
         {deals.map((deal) => (
           <DraggableCard key={deal.id} deal={deal} onSelect={onSelect} />
         ))}
-        {deals.length === 0 && <p className="px-2 py-6 text-center text-xs text-neutral-400">No deals</p>}
+        {deals.length === 0 && <p className="px-3 py-6 text-center text-xs text-neutral-400">No deals</p>}
       </div>
     </div>
   );

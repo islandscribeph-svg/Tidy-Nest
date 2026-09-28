@@ -51,6 +51,43 @@ export const SOURCE_LABELS: Record<Source, string> = {
   UNKNOWN: "Unknown",
 };
 
+// One color per stage so the board reads as color-coded-by-process: the
+// column header, its accent bar, and every row in it all use the same color.
+export const STAGE_COLORS: Record<Stage, { header: string; text: string; bar: string; dot: string }> = {
+  NEW_LEAD: { header: "bg-sky-50 border-sky-200", text: "text-sky-700", bar: "border-l-sky-400", dot: "bg-sky-400" },
+  CONTACTED: {
+    header: "bg-indigo-50 border-indigo-200",
+    text: "text-indigo-700",
+    bar: "border-l-indigo-400",
+    dot: "bg-indigo-400",
+  },
+  CONSULTATION: {
+    header: "bg-violet-50 border-violet-200",
+    text: "text-violet-700",
+    bar: "border-l-violet-400",
+    dot: "bg-violet-400",
+  },
+  IN_PROGRESS: {
+    header: "bg-amber-50 border-amber-200",
+    text: "text-amber-700",
+    bar: "border-l-amber-400",
+    dot: "bg-amber-400",
+  },
+  CLOSED: {
+    header: "bg-emerald-50 border-emerald-200",
+    text: "text-emerald-700",
+    bar: "border-l-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  UNQUALIFIED: {
+    header: "bg-neutral-100 border-neutral-300",
+    text: "text-neutral-600",
+    bar: "border-l-neutral-400",
+    dot: "bg-neutral-400",
+  },
+  DEAD: { header: "bg-rose-50 border-rose-200", text: "text-rose-700", bar: "border-l-rose-400", dot: "bg-rose-400" },
+};
+
 // Exit stages reachable as a drop target from anywhere in the pipeline,
 // rendered as side lanes rather than inline with the main left-to-right flow.
 export const EXIT_STAGES: Stage[] = ["UNQUALIFIED", "DEAD"];
