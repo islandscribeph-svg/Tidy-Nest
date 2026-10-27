@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redactText } from "@/lib/alias";
 import { hoursBetween } from "@/lib/hours";
-import { presentDeal } from "@/lib/present";
+import { presentClientJson, presentDeal } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -89,12 +89,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     hourRows.reduce((sum, e) => sum + Number(e.hours), 0);
   const totalPay = totalHours * Number(employee.hourlyRate);
 
-  return NextResponse.json({
-    employee,
-    manualEntries: manualRows,
-    worksheetEntries: worksheetRows,
-    hourEntries: hourRows,
-    totalHours,
-    totalPay,
-  });
+  return NextResponse.json(
+    presentClientJson({
+      employee,
+      manualEntries: manualRows,
+      worksheetEntries: worksheetRows,
+      hourEntries: hourRows,
+      totalHours,
+      totalPay,
+    }),
+  );
 }

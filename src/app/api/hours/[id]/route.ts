@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { dateOnlyToUtcNoon } from "@/lib/eastern-time";
 import { hoursBetween } from "@/lib/hours";
-import { presentDeal } from "@/lib/present";
-import { redactText } from "@/lib/alias";
+import { presentClientJson, presentDeal } from "@/lib/present";
+import { preserveStoredText, redactText } from "@/lib/alias";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,7 +37,7 @@ function serialize(entry: {
     : entry.clientLabel
       ? redactText(entry.clientLabel)
       : null;
-  return {
+  return presentClientJson({
     id: entry.id,
     date: entry.date.toISOString(),
     personName: redactText(entry.personName),
@@ -49,7 +49,7 @@ function serialize(entry: {
     breakMinutes: entry.breakMinutes,
     notes: entry.notes ? redactText(entry.notes) : null,
     hours: hoursBetween(entry.startTime, entry.endTime, entry.breakMinutes),
-  };
+  });
 }
 
 const includeDeal = { deal: { include: { contact: true } } } as const;
@@ -72,7 +72,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Start, end, and break must be a valid clock range." }, { status: 400 });
   }
 
-  const personName = parsed.data.personName?.trim() ?? existing.personName;
+  const personName =
+    parsed.data.personName === undefined
+      ? existing.personName
+      : (preserveStoredText(parsed.data.personName.trim(), existing.personName) ?? parsed.data.personName.trim());
   const employee = await prisma.employee.findFirst({
     where: { name: { equals: personName, mode: "insensitive" } },
   });
@@ -93,7 +96,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       startTime,
       endTime,
       breakMinutes,
-      notes: parsed.data.notes === undefined ? undefined : parsed.data.notes?.trim() || null,
+      notes:
+        parsed.data.notes === undefined
+          ? undefined
+          : preserveStoredText(parsed.data.notes?.trim() || null, existing.notes),
     },
     include: includeDeal,
   });

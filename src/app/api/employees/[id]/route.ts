@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { preserveStoredText } from "@/lib/alias";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   const employee = await prisma.employee.findUnique({ where: { id } });
   if (!employee) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(employee);
+  return NextResponse.json(presentClientJson(employee));
 }
 
 const schema = z.object({
@@ -30,6 +32,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
-  const employee = await prisma.employee.update({ where: { id }, data: parsed.data });
-  return NextResponse.json(employee);
+  const existing = await prisma.employee.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const employee = await prisma.employee.update({
+    where: { id },
+    data: {
+      ...parsed.data,
+      name: parsed.data.name === undefined ? undefined : preserveStoredText(parsed.data.name, existing.name) ?? parsed.data.name,
+    },
+  });
+  return NextResponse.json(presentClientJson(employee));
 }

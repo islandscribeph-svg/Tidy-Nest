@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentClientJson } from "@/lib/present";
 
 export async function GET() {
   const session = await getSession();
@@ -10,5 +11,5 @@ export async function GET() {
     select: { id: true, name: true, role: true },
     orderBy: { name: "asc" },
   });
-  return NextResponse.json(users);
+  return NextResponse.json(presentClientJson(users));
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { preserveStoredText } from "@/lib/alias";
+import { presentContact, presentDeal } from "@/lib/present";
 
 const saveContactSchema = z.object({
   dealId: z.string(),
@@ -62,13 +64,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           duplicate: true,
-          candidate: {
+          candidate: presentContact({
             id: candidate.id,
             firstName: candidate.firstName,
             lastName: candidate.lastName,
             email: candidate.email,
             phone: candidate.phone,
-          },
+          }),
         },
         { status: 409 },
       );
@@ -76,18 +78,20 @@ export async function POST(req: NextRequest) {
   }
 
   const contactId = data.useExistingContactId ?? deal.contactId;
+  const stored = await prisma.contact.findUnique({ where: { id: contactId } });
+  if (!stored) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
 
   const contact = await prisma.contact.update({
     where: { id: contactId },
     data: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email || undefined,
-      phone: data.phone,
-      streetAddress: data.streetAddress,
-      city: data.city,
-      state: data.state,
-      company: data.company,
+      firstName: preserveStoredText(data.firstName, stored.firstName) ?? data.firstName,
+      lastName: preserveStoredText(data.lastName, stored.lastName),
+      email: preserveStoredText(data.email, stored.email) || undefined,
+      phone: preserveStoredText(data.phone, stored.phone),
+      streetAddress: preserveStoredText(data.streetAddress, stored.streetAddress),
+      city: preserveStoredText(data.city, stored.city),
+      state: preserveStoredText(data.state, stored.state),
+      company: preserveStoredText(data.company, stored.company),
     },
   });
 
@@ -101,5 +105,5 @@ export async function POST(req: NextRequest) {
     include: { contact: true },
   });
 
-  return NextResponse.json({ contact, deal: updatedDeal });
+  return NextResponse.json({ contact: presentContact(contact), deal: presentDeal(updatedDeal) });
 }

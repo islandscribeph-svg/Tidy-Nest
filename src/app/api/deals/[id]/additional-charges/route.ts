@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -22,5 +23,5 @@ export async function POST(req: NextRequest, { params }: Params) {
   const charge = await prisma.additionalCharge.create({
     data: { dealId: id, ...parsed.data, sortOrder: count },
   });
-  return NextResponse.json(charge, { status: 201 });
+  return NextResponse.json(presentClientJson(charge), { status: 201 });
 }

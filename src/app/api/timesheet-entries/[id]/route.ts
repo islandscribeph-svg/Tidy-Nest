@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { preserveStoredText } from "@/lib/alias";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -19,12 +21,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
+  const existing = await prisma.timesheetEntry.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { date, ...rest } = parsed.data;
   const entry = await prisma.timesheetEntry.update({
     where: { id },
-    data: { ...rest, date: date ? new Date(date) : undefined },
+    data: {
+      ...rest,
+      description:
+        rest.description === undefined ? undefined : preserveStoredText(rest.description, existing.description),
+      date: date ? new Date(date) : undefined,
+    },
   });
-  return NextResponse.json(entry);
+  return NextResponse.json(presentClientJson(entry));
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {

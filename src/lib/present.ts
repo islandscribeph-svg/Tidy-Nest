@@ -15,70 +15,58 @@ type ContactLike = {
   cityState?: string | null;
 };
 
-function redactMaybe(value: string | null | undefined, rules: AliasRule[]): string | null | undefined {
-  if (value == null) return value;
-  return redactText(value, rules);
+const UNREDACTED_KEYS = new Set(["stage", "source", "serviceType", "role", "type", "status", "fileType"]);
+
+function keepKey(key: string | undefined): boolean {
+  if (!key) return false;
+  return key === "id" || key.endsWith("Id") || UNREDACTED_KEYS.has(key);
+}
+
+function walk(value: unknown, rules: AliasRule[], key?: string): unknown {
+  if (typeof value === "string") {
+    if (keepKey(key)) return value;
+    return redactText(value, rules);
+  }
+  if (Array.isArray(value)) return value.map((item) => walk(item, rules));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [childKey, child] of Object.entries(value as Record<string, unknown>)) {
+      out[childKey] = walk(child, rules, childKey);
+    }
+    return out;
+  }
+  return value;
+}
+
+// Every string that can reach the browser, except ids and enum codes.
+// Names, emails, notes, checklist labels, file names, and free text are included.
+export function presentClientJson<T>(value: T, rules: AliasRule[] = getAliasRules()): T {
+  return walk(toPlain(value), rules) as T;
 }
 
 export function presentContact<T extends ContactLike>(contact: T, rules: AliasRule[] = getAliasRules()): T {
-  return {
-    ...contact,
-    firstName: redactText(contact.firstName, rules),
-    lastName: redactMaybe(contact.lastName, rules),
-    company: redactMaybe(contact.company, rules),
-    email: redactMaybe(contact.email, rules),
-    streetAddress: redactMaybe(contact.streetAddress, rules),
-    notes: redactMaybe(contact.notes, rules),
-    cityState: redactMaybe(contact.cityState, rules),
-  };
+  return presentClientJson(contact, rules);
 }
 
 export function presentDeal<T extends { contact: ContactLike; title?: string | null }>(
   deal: T,
   rules: AliasRule[] = getAliasRules(),
 ): T & { displayName: string } {
-  const plain = toPlain(deal) as T & {
+  const redacted = presentClientJson(deal, rules) as T & {
+    contact: ContactLike;
+    title?: string | null;
     worksheetFileName?: string | null;
     projectNotes?: string | null;
     projectDateTimeText?: string | null;
-    detailsOfProject?: string | null;
-    sourceDetail?: string | null;
-    invoiceFileName?: string | null;
-    dateParseIssues?: string | null;
-    worksheetNotes?: string | null;
-    notes?: { body?: string }[];
   };
-  const contact = presentContact(plain.contact, rules);
-  const title = redactMaybe(plain.title, rules) ?? null;
-  const worksheetFileName = redactMaybe(plain.worksheetFileName, rules) ?? null;
-  const projectNotes = redactMaybe(plain.projectNotes, rules) ?? null;
-  const projectDateTimeText = redactMaybe(plain.projectDateTimeText, rules) ?? null;
   const displayName = buildDisplayName({
-    firstName: contact.firstName,
-    lastName: contact.lastName,
-    company: contact.company,
-    title,
-    worksheetFileName,
-    projectNotes,
-    projectDateTimeText,
+    firstName: redacted.contact?.firstName,
+    lastName: redacted.contact?.lastName,
+    company: redacted.contact?.company,
+    title: redacted.title,
+    worksheetFileName: redacted.worksheetFileName,
+    projectNotes: redacted.projectNotes,
+    projectDateTimeText: redacted.projectDateTimeText,
   });
-  const notes = Array.isArray(plain.notes)
-    ? plain.notes.map((note) => ({ ...note, body: note.body ? redactText(note.body, rules) : note.body }))
-    : plain.notes;
-
-  return {
-    ...plain,
-    contact,
-    title,
-    displayName,
-    worksheetFileName,
-    projectNotes,
-    projectDateTimeText,
-    detailsOfProject: redactMaybe(plain.detailsOfProject, rules),
-    sourceDetail: redactMaybe(plain.sourceDetail, rules),
-    invoiceFileName: redactMaybe(plain.invoiceFileName, rules),
-    dateParseIssues: redactMaybe(plain.dateParseIssues, rules),
-    worksheetNotes: redactMaybe(plain.worksheetNotes, rules),
-    notes,
-  };
+  return { ...redacted, displayName };
 }

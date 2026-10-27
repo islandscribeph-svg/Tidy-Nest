@@ -16,8 +16,9 @@
     "import:snapshot": "tsx scripts/import-snapshot.ts",
     "sandbox:setup": "tsx scripts/sandbox-setup.ts",
     "sandbox:start": "next dev",
+    "sandbox:start:prod": "next start -H 127.0.0.1 -p 3000",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/lib/monday/snapshot.test.ts src/lib/core.test.ts"
+    "test": "node --import tsx --test src/lib/monday/snapshot.test.ts src/lib/core.test.ts src/lib/alias-routes.test.ts"
   },
   "engines": {
     "node": ">=20"

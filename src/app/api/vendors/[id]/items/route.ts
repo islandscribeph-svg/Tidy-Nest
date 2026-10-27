@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,5 +24,5 @@ export async function POST(req: NextRequest, { params }: Params) {
   const item = await prisma.reimbursementItem.create({
     data: { vendorId: id, ...parsed.data, sortOrder: count },
   });
-  return NextResponse.json(item, { status: 201 });
+  return NextResponse.json(presentClientJson(item), { status: 201 });
 }

@@ -42,3 +42,16 @@ export function redactText(input: string | null | undefined, rules: AliasRule[] 
   }
   return out;
 }
+
+// A form that was filled from a redacted response will submit the display
+// text on blur. Keep the stored value when the submission is that display
+// text, so the raw name stays in the database.
+export function preserveStoredText(
+  submitted: string | null | undefined,
+  stored: string | null | undefined,
+  rules: AliasRule[] = getAliasRules(),
+): string | null | undefined {
+  if (submitted == null) return submitted;
+  if (stored != null && redactText(stored, rules) === submitted) return stored;
+  return submitted;
+}

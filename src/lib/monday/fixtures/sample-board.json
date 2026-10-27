@@ -276,7 +276,8 @@
         { "id": "first_name0__1", "type": "text", "text": "Alex", "value": null },
         { "id": "lead_status", "type": "status", "text": "Client - Start", "value": null },
         { "id": "single_select__1", "type": "status", "text": "Home Management", "value": null },
-        { "id": "lead_email", "type": "email", "text": "office@example.com", "value": null },
+        { "id": "lead_email", "type": "email", "text": "alex.harborlane@example.com", "value": null },
+        { "id": "email_mkr663ra", "type": "email", "text": "harborlane@slack.example", "value": null },
         {
           "id": "worksheet__1",
           "type": "text",
@@ -286,7 +287,7 @@
         { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/harbor1\"}" },
         { "id": "long_text_mks69hr8", "type": "long_text", "text": "Spring organizing visit", "value": null }
       ],
-      "subitems": []
+      "subitems": [{ "id": "sub-harbor", "name": "Confirm Harborlane key handover", "column_values": [] }]
     },
     {
       "id": "s-16",
@@ -298,7 +299,7 @@
       "column_values": [
         { "id": "first_name0__1", "type": "text", "text": "Alex", "value": null },
         { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
-        { "id": "lead_email", "type": "email", "text": "office@example.com", "value": null },
+        { "id": "lead_email", "type": "email", "text": "alex.harborlane@example.com", "value": null },
         { "id": "text_mkw395w0", "type": "text", "text": "2406", "value": null },
         { "id": "numeric__1", "type": "numbers", "text": "2400", "value": null },
         { "id": "date_closed__1", "type": "date", "text": "2026-01-20", "value": null },

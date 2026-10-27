@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { dateOnlyToUtcNoon } from "@/lib/eastern-time";
 import { hoursBetween } from "@/lib/hours";
-import { presentDeal } from "@/lib/present";
+import { presentClientJson, presentDeal } from "@/lib/present";
 import { redactText } from "@/lib/alias";
 
 const writeSchema = z.object({
@@ -41,7 +41,7 @@ function serialize(entry: {
     : entry.clientLabel
       ? redactText(entry.clientLabel)
       : null;
-  return {
+  return presentClientJson({
     id: entry.id,
     date: entry.date.toISOString(),
     personName: redactText(entry.personName),
@@ -53,7 +53,7 @@ function serialize(entry: {
     breakMinutes: entry.breakMinutes,
     notes: entry.notes ? redactText(entry.notes) : null,
     hours: hoursBetween(entry.startTime, entry.endTime, entry.breakMinutes),
-  };
+  });
 }
 
 const includeDeal = { deal: { include: { contact: true } } } as const;

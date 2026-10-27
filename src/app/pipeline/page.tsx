@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { presentDeal } from "@/lib/present";
+import { presentClientJson, presentDeal } from "@/lib/present";
 import { PipelineBoard } from "@/components/pipeline-board";
 import type { DealSummary } from "@/lib/types";
 
@@ -27,8 +27,8 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
       <PipelineBoard
         initialDeals={deals.map((deal) => presentDeal(deal)) as unknown as DealSummary[]}
         initialDealId={selectedDeal ?? null}
-        users={users}
-        employees={employees}
+        users={presentClientJson(users)}
+        employees={presentClientJson(employees)}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,5 +21,5 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: { dealId: id, vendorName: parsed.data.vendorName, sortOrder: count },
     include: { items: true },
   });
-  return NextResponse.json(vendor, { status: 201 });
+  return NextResponse.json(presentClientJson(vendor), { status: 201 });
 }

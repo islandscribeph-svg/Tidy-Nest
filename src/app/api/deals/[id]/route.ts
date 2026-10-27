@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { parseDateInput } from "@/lib/eastern-time";
+import { preserveStoredText } from "@/lib/alias";
 import { presentDeal } from "@/lib/present";
 import { CANONICAL_STATUS, stageFromMondayStatus } from "@/lib/status-map";
 
@@ -41,12 +42,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const presented = presentDeal(deal);
   return NextResponse.json({
     ...presented,
-    relatedDeals: siblings.map((sibling) => ({
-      id: sibling.id,
-      displayName: presentDeal(sibling).displayName,
-      stage: sibling.stage,
-      subStatus: sibling.subStatus,
-    })),
+    relatedDeals: siblings.map((sibling) => {
+      const shown = presentDeal(sibling);
+      return {
+        id: sibling.id,
+        displayName: shown.displayName,
+        stage: sibling.stage,
+        subStatus: shown.subStatus,
+      };
+    }),
   });
 }
 
@@ -93,15 +97,32 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { consultDate, projectStartDate, dateClosed, stage: requestedStage, subStatus: requestedSubStatus, ...rest } =
     parsed.data;
 
+  const textKeys = [
+    "title",
+    "detailsOfProject",
+    "sourceDetail",
+    "invoiceNumber",
+    "invoiceLink",
+    "consultInvoiceNumber",
+    "consultInvoiceLink",
+    "worksheetNotes",
+  ] as const;
+
   const existing = await prisma.deal.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   let stage = requestedStage;
   let subStatus = requestedSubStatus;
+  for (const key of textKeys) {
+    if (rest[key] === undefined) continue;
+    rest[key] = preserveStoredText(rest[key], existing[key]);
+  }
+  if (subStatus !== undefined) subStatus = preserveStoredText(subStatus, existing.subStatus);
   if (subStatus) {
     const mapped = stageFromMondayStatus(subStatus);
     if (mapped) stage = mapped;
   }
+
   if (stage && stage !== existing.stage && requestedSubStatus === undefined) {
     const current = stageFromMondayStatus(existing.subStatus);
     if (current !== stage) subStatus = CANONICAL_STATUS[stage];

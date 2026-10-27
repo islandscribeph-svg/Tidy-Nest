@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -19,5 +20,5 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: { dealId: id, authorId: session.userId, body: parsed.data.body },
     include: { author: { select: { name: true } } },
   });
-  return NextResponse.json(note, { status: 201 });
+  return NextResponse.json(presentClientJson(note), { status: 201 });
 }

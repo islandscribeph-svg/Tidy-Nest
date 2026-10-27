@@ -66,6 +66,14 @@ npm run sandbox:start
 
 Open http://localhost:3000/login and sign in with either sandbox email and its password. There is no registration page. Any other email gets the same invalid-login message.
 
+After `npm run build`, the production server is:
+
+```bash
+npm run sandbox:start:prod
+```
+
+That runs `next start` on 127.0.0.1 port 3000.
+
 The header and footer show `Data as of <pulledAt> ET · read-only snapshot` after a successful load, or `No snapshot loaded · read-only · Monday is not connected` before one.
 
 ## 5. Refresh the snapshot
