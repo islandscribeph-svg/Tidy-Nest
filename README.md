@@ -4,20 +4,30 @@ Custom lead pipeline and light project-management tool for Tidy Nest, replacing 
 
 Stack: Next.js (App Router, TypeScript) + Prisma + Postgres, Tailwind. See `/root/.claude/plans` (or ask for `PLAN.md`) for the full design rationale — in short, the old board conflated pipeline **stage** with lead **status** (a "Dead" lead and a "Closed" client both lived in a group called "Closed"), and had no real separation between a *Contact* (a person) and a *Deal* (one pipeline item/engagement). This app fixes both.
 
+## Dashboard
+
+The default landing page (`/dashboard`, both after login and at `/`). A filter bar (Year, Month, Client, Address/City/State, Project Title — defaults to the current month) scopes four stat cards (Win Rate, Total Filtered Deals, Active Pipeline Value, Closed Won Revenue) plus a set of charts, all computed client-side from the full deal set: a "Deals Over Time" line chart (monthly volume for the selected year, or seasonality-by-month across all years when "All Years" is picked), a donut chart for Deals by Service Type, and color-coded breakdown bars for Deals by Stage and Deals by Lead Source. "Export CSV" downloads exactly the filtered set via `/api/reports/export?...` (same query params as the on-screen filters, via `matchesDashboardFilters()` in `src/lib/pipeline.ts` so the two never disagree). Chart colors follow a deliberate categorical/sequential palette in `src/lib/chart-colors.ts` (see "Design notes" below).
+
+Year/Month filtering (and the line chart's x-axis) use each deal's own **project date** — `dateClosed ?? projectStartDate ?? consultDate`, via `projectDate()` in `src/lib/pipeline.ts` — not `createdAt`, since the legacy import gave every record the same `createdAt` (the import timestamp).
+
 ## Pipeline
 
-Each pipeline item is a **project** (e.g. "Fall Relocation") belonging to a contact, who may have several projects over time. Cards show the project title, the contact's name, and the service type.
+Each pipeline item is a **project** (e.g. "Fall Relocation") belonging to a contact, who may have several projects over time. Within each stage column, projects render as plain color-coded text rows ("Client - Project Name", with the project date on the right) rather than cards — each stage has its own color (see `STAGE_COLORS` in `src/lib/pipeline.ts`), reused consistently on the column header, the row's accent bar, and everywhere else in the app a stage is shown (Dashboard, Calendar).
 
-Stages: **New Leads → Contacted → Consultation → In Progress → Closed**, with **Unqualified** and **Dead** as exit lanes reachable from any stage. Drag a card between columns to change its stage.
+Stages: **New Leads → Contacted → Consultation → In Progress → Closed**, with **Unqualified** and **Dead** as exit lanes reachable from any stage. Drag a row between columns to change its stage.
 
-Clicking a card opens the project detail drawer, with tabs that appear as the project matures:
-- **Details** (always shown): stage/service/source/value fields and the activity/notes timeline.
+Clicking a row opens the project detail modal (centered, not a side drawer), with tabs that appear as the project matures:
+- **Details** (always shown): stage/service/source/value fields and the activity/notes timeline. Stage/Service/Source/Assigned-to are `SelectButton` components (`src/components/ui/select-button.tsx`) — a styled button that opens a floating option list on click, used in place of native `<select>` dropdowns throughout the app's popups/modals.
 - **Consultation** (once the project reaches Consultation): a checklist, the consultation date, and a "Create Consult Invoice on QuickBooks" button — currently a manual bridge (opens QuickBooks in a new tab; paste the resulting invoice number/link back into the two fields below it) until real QuickBooks API integration is built.
 - **Services Worksheet** (once In Progress): billable time entries — Person / Date / Description / Hours / Rate, with a computed total — and a notes field. `Rate` here is what the *client* is billed; if a row is attributed to someone, those hours also land on that person's timesheet (see Employees below), valued at *their own* hourly rate instead.
 - **Reimbursements** (once In Progress): per-vendor expense tracking (Item Details/Qty/Unit Price, computed subtotal, fillable shipping fee + sales tax, computed grand total per vendor), with a combined overview once there's more than one vendor.
 - **Total Billables** (once In Progress): Service Hours Total + Reimbursements Total + itemized additional charges = Invoice Total, and a "Create Project Invoice on QuickBooks" button (same manual-bridge pattern as the Consultation tab's invoice button).
 
 Tab visibility is based on the project's current stage reaching that point, not a full history — Unqualified/Dead are treated as having reached the maximum tab set so already-entered data is never hidden, even if that means an empty tab shows for a project that exited very early.
+
+## Calendar
+
+`/calendar` plots every project on its project date (same `projectDate()` field the Dashboard uses) in a month-grid view, color-coded by stage like the Pipeline. Clicking an entry opens the same project detail modal as the Pipeline.
 
 ## Employees & Contractors
 
@@ -79,9 +89,9 @@ A new lead isn't a full contact until required fields (name + email-or-phone + s
 ```
 Creates a draft Contact + a `NEW_LEAD` Deal. Wire this into whatever handles the current website form submission.
 
-## Reports
+## Design notes
 
-`/reports` shows deal counts by stage/service/source and win rate, with a CSV export button (`/api/reports/export`) for spreadsheet-style sharing — one-way export, not a live Google Sheets sync.
+Top nav bar is olive green (`#5c6b3f`) with the white Tidy Nest wordmark (`public/brand/`) — `src/proxy.ts` (this app's auth guard, Next 16 renamed `middleware.ts` to `proxy.ts`) whitelists `/brand` so the logo loads without a session. Chart colors (Dashboard) follow a deliberate categorical/sequential palette validated for colorblind-safe contrast — see `src/lib/chart-colors.ts` and don't hand-pick new chart colors without the same reasoning (categorical = identity, fixed hue order; sequential = one hue, magnitude; never more than ~6 pie slices).
 
 ## Forgot password
 
