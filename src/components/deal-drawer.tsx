@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { formatEasternDateTime } from "@/lib/eastern-time";
 import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, SUB_STATUS_SUGGESTIONS, hasReachedConsultation, hasReachedInProgress } from "@/lib/pipeline";
 import type { DealDetail, DealSummary } from "@/lib/types";
 import { SaveContactModal } from "@/components/save-contact-modal";
@@ -97,7 +98,7 @@ export function DealDrawer({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
       <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Project details</h2>
+          <h2 className="text-sm font-semibold text-neutral-900">{deal?.displayName || "Project details"}</h2>
           <button onClick={onClose} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100">
             <X size={18} />
           </button>
@@ -236,6 +237,52 @@ export function DealDrawer({
                     </FieldRow>
                   </section>
 
+                  <section className="space-y-2 text-sm">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Snapshot</h4>
+                    <p className="text-xs text-neutral-500">
+                      Monday status: {deal.subStatus || "—"}
+                      {deal.mondayGroupTitle ? ` · Board group (ignored for stage): ${deal.mondayGroupTitle}` : ""}
+                    </p>
+                    {deal.dateParseIssues && (
+                      <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{deal.dateParseIssues}</p>
+                    )}
+                    {deal.projectNotes && <p className="whitespace-pre-wrap text-neutral-700">{deal.projectNotes}</p>}
+                    {deal.projectDateTimeText && (
+                      <p className="text-xs text-neutral-500">Project date text: {deal.projectDateTimeText}</p>
+                    )}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <ExternalLink href={deal.worksheetUrl}>Worksheet{deal.worksheetFileName ? `: ${deal.worksheetFileName}` : ""}</ExternalLink>
+                      <ExternalLink href={deal.driveFolderUrl}>Client Drive folder</ExternalLink>
+                      <ExternalLink href={deal.invoicePdfUrl}>
+                        Invoice PDF{deal.invoiceFileName ? `: ${deal.invoiceFileName}` : ""}
+                      </ExternalLink>
+                      <ExternalLink href={deal.invoiceLink}>Invoice link</ExternalLink>
+                      <ExternalLink href={deal.consultInvoiceLink}>Consult invoice</ExternalLink>
+                      <ExternalLink href={deal.qbDepositPaymentLink}>Deposit payment</ExternalLink>
+                      <ExternalLink href={deal.qbFinalPaymentLink}>Final payment</ExternalLink>
+                      <ExternalLink href={deal.proposalUrl}>Proposal</ExternalLink>
+                      <ExternalLink href={deal.contractUrl}>Contract</ExternalLink>
+                      {deal.slackChannelId && (
+                        <ExternalLink href={`https://slack.com/app_redirect?channel=${encodeURIComponent(deal.slackChannelId)}`}>
+                          Slack channel
+                        </ExternalLink>
+                      )}
+                      <ExternalLink href={deal.mondayUrl}>Monday item (read-only link)</ExternalLink>
+                    </div>
+                    {deal.relatedDeals && deal.relatedDeals.length > 0 && (
+                      <ul className="text-xs text-neutral-600">
+                        {deal.relatedDeals.map((related) => (
+                          <li key={related.id}>
+                            <a className="underline" href={`/pipeline?deal=${related.id}`}>
+                              {related.displayName}
+                            </a>{" "}
+                            · {STAGE_LABELS[related.stage]}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+
                   <section>
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Activity</h4>
                     <div className="mb-3 flex gap-2">
@@ -259,7 +306,7 @@ export function DealDrawer({
                         <li key={n.id} className="text-sm">
                           <p className="text-neutral-700">{n.body}</p>
                           <p className="text-xs text-neutral-400">
-                            {n.author?.name ?? "Unknown"} · {new Date(n.createdAt).toLocaleString()}
+                            {n.author?.name ?? "Unknown"} · {formatEasternDateTime(n.createdAt)}
                           </p>
                         </li>
                       ))}
@@ -301,6 +348,15 @@ export function DealDrawer({
         />
       )}
     </div>
+  );
+}
+
+function ExternalLink({ href, children }: { href: string | null | undefined; children: React.ReactNode }) {
+  if (!href?.trim()) return null;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="text-sm text-blue-800 underline">
+      {children}
+    </a>
   );
 }
 

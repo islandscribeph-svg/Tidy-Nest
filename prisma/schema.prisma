@@ -1,5 +1,4 @@
 // Tidy Nest CRM/PM — Prisma schema
-// See /root/.claude/plans (or PLAN.md at repo root) for the design rationale.
 
 generator client {
   provider = "prisma-client-js"
@@ -102,6 +101,7 @@ model Contact {
   state         String?
   company       String?
   notes         String?
+  cityState     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -152,6 +152,33 @@ model Deal {
   qbDepositPaymentLink String?
   qbFinalPaymentLink   String?
 
+  // Read-only Monday mirror. mondayGroupTitle is stored for reference only;
+  // pipeline stage is derived from the Status column (subStatus), never the group.
+  mondayItemId     String?   @unique
+  mondayUrl        String?
+  mondayGroupTitle String?
+  mondayUpdatedAt  DateTime?
+
+  worksheetUrl      String?
+  worksheetId       String?
+  worksheetFileName String?
+  driveFolderUrl    String?
+  invoicePdfUrl     String?
+  invoiceFileName   String?
+
+  projectDateTimeText String?
+  projectNotes        String? @db.Text
+
+  slackChannelId    String?
+  slackChannelEmail String?
+  proposalUrl       String?
+  contractUrl       String?
+
+  declutterFrequency  String?
+  difficultyLettingGo String?
+  storageSpace        String?
+  dateParseIssues     String?
+
   assignedTo   User?   @relation("DealAssignee", fields: [assignedToId], references: [id])
   assignedToId String?
 
@@ -164,6 +191,7 @@ model Deal {
   worksheetEntries     WorksheetEntry[]
   reimbursementVendors ReimbursementVendor[]
   additionalCharges    AdditionalCharge[]
+  hourEntries          HourEntry[]
 
   @@index([stage])
   @@index([contactId])
@@ -212,6 +240,7 @@ model Employee {
 
   timesheetEntries TimesheetEntry[]
   worksheetEntries WorksheetEntry[]
+  hourEntries      HourEntry[]
 }
 
 // Manually-entered timesheet hours, not tied to any project. Project-sourced
@@ -261,6 +290,44 @@ model ReimbursementItem {
   quantity    Decimal             @db.Decimal(10, 2)
   unitPrice   Decimal             @db.Decimal(10, 2)
   sortOrder   Int                 @default(0)
+}
+
+// Manual hours log. Separate from Monday and from billable worksheet rows.
+// startTime/endTime are Eastern wall-clock "HH:mm" values. `date` is the
+// Eastern calendar date stored at 12:00 UTC so the day does not shift.
+model HourEntry {
+  id            String    @id @default(cuid())
+  date          DateTime
+  personName    String
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId    String?
+  deal          Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId        String?
+  clientLabel   String?
+  startTime     String
+  endTime       String
+  breakMinutes  Int       @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([date])
+  @@index([dealId])
+  @@index([employeeId])
+}
+
+// One row per snapshot load. This app never contacts Monday.
+model SyncRun {
+  id         String    @id @default(cuid())
+  source     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String
+  itemCount  Int       @default(0)
+  message    String?
+  pulledAt   DateTime?
+  boardId    String?
+  boardName  String?
 }
 
 // Activity/note timeline entry. Attached to a Deal and/or Contact so both

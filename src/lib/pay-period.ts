@@ -1,52 +1,44 @@
-// Semi-monthly pay periods: the 1st–15th, and the 16th–end of month.
-// Periods aren't stored as rows; they're computed from dates so timesheet
-// entries (manual or project-sourced) just need a plain date to slot in.
+// Semi-monthly pay periods in America/New_York: the 1st–15th, and the
+// 16th through the last calendar day of the month. Bounds are UTC instants
+// covering that Eastern calendar day so date-only rows (midnight or noon UTC)
+// fall inside the period they were entered for.
+
+import { calendarParts } from "@/lib/eastern-time";
 
 export type PayPeriod = {
-  start: Date; // inclusive, local midnight
-  end: Date; // inclusive, local end-of-day
+  start: Date;
+  end: Date;
   label: string;
 };
 
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-}
-
-function endOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-}
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function lastDayOfMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
-function formatDate(d: Date) {
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+function bounds(year: number, month: number, startDay: number, endDay: number): PayPeriod {
+  const start = new Date(Date.UTC(year, month - 1, startDay, 0, 0, 0, 0));
+  const end = new Date(Date.UTC(year, month - 1, endDay, 23, 59, 59, 999));
+  const monthName = MONTHS[month - 1];
+  return { start, end, label: `${monthName} ${startDay} – ${monthName} ${endDay}, ${year}` };
 }
 
 export function getPayPeriod(date: Date): PayPeriod {
-  const year = date.getFullYear();
-  const month = date.getMonth();
+  const { year, month, day } = calendarParts(date);
+  if (day <= 15) return bounds(year, month, 1, 15);
+  return bounds(year, month, 16, lastDayOfMonth(year, month));
+}
 
-  if (date.getDate() <= 15) {
-    const start = startOfDay(new Date(year, month, 1));
-    const end = endOfDay(new Date(year, month, 15));
-    return { start, end, label: `${formatDate(start)} – ${formatDate(end)}, ${year}` };
-  }
-
-  const start = startOfDay(new Date(year, month, 16));
-  const end = endOfDay(new Date(year, month, lastDayOfMonth(year, month)));
-  return { start, end, label: `${formatDate(start)} – ${formatDate(end)}, ${year}` };
+function shiftCalendarDay(date: Date, days: number): Date {
+  const { year, month, day } = calendarParts(date);
+  return new Date(Date.UTC(year, month - 1, day + days, 12, 0, 0));
 }
 
 export function previousPayPeriod(period: PayPeriod): PayPeriod {
-  const dayBeforeStart = new Date(period.start);
-  dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
-  return getPayPeriod(dayBeforeStart);
+  return getPayPeriod(shiftCalendarDay(period.start, -1));
 }
 
 export function nextPayPeriod(period: PayPeriod): PayPeriod {
-  const dayAfterEnd = new Date(period.end);
-  dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
-  return getPayPeriod(dayAfterEnd);
+  return getPayPeriod(shiftCalendarDay(period.end, 1));
 }

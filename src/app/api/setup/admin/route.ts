@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { checkSetupKey } from "@/lib/setup-auth";
+import { MAX_STAFF_USERS, staffCreateError } from "@/lib/staff-users";
 import { corsJson, corsPreflight } from "@/lib/cors";
 
 // One-time bootstrap endpoint: creates the first admin login. Self-disables
@@ -23,9 +24,9 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const existingCount = await prisma.user.count();
-  if (existingCount > 0) {
-    return corsJson({ error: "Setup already completed — a user already exists." }, { status: 409 });
+  const existing = await prisma.user.findMany({ select: { email: true } });
+  if (existing.length >= MAX_STAFF_USERS) {
+    return corsJson({ error: "Setup already completed — both staff accounts exist." }, { status: 409 });
   }
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
@@ -33,8 +34,14 @@ export async function POST(req: NextRequest) {
     return corsJson({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { name, email, password } = parsed.data;
-  const passwordHash = await hashPassword(password);
+  const name = parsed.data.name;
+  const email = parsed.data.email.toLowerCase();
+  const createError = staffCreateError({ email, existingEmails: existing.map((user) => user.email) });
+  if (createError) {
+    return corsJson({ error: createError }, { status: existing.some((user) => user.email.toLowerCase() === email) ? 409 : 403 });
+  }
+
+  const passwordHash = await hashPassword(parsed.data.password);
   const user = await prisma.user.create({
     data: { name, email, passwordHash, role: "ADMIN" },
   });

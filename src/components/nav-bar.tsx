@@ -8,10 +8,24 @@ const LINKS = [
   { href: "/pipeline", label: "Pipeline" },
   { href: "/calendar", label: "Calendar" },
   { href: "/contacts", label: "Contacts" },
+  { href: "/hours", label: "Hours" },
+  { href: "/data-problems", label: "Data problems" },
   { href: "/employees", label: "Employees" },
 ];
 
-export function NavBar({ userName, role }: { userName: string; role: string }) {
+export function NavBar({
+  userName,
+  role,
+  brandColor,
+  logoPath,
+  snapshotLabel,
+}: {
+  userName: string;
+  role: string;
+  brandColor: string;
+  logoPath: string;
+  snapshotLabel: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -24,11 +38,12 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
   const links = role === "ADMIN" ? [...LINKS, { href: "/settings", label: "Settings" }] : LINKS;
 
   return (
-    <header className="flex items-center justify-between bg-[#5c6b3f] px-6 py-3">
+    <header style={{ backgroundColor: brandColor }}>
+      <div className="flex items-center justify-between px-6 py-3">
       <div className="flex items-center gap-8">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/tidynest-logo-white.webp" alt="Tidy Nest" className="h-7 w-auto" />
-        <nav className="flex gap-1">
+        <img src={logoPath} alt="Tidy Nest" className="h-7 w-auto" />
+        <nav className="flex flex-wrap gap-1">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -44,7 +59,7 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-3 text-sm text-white/80">
+      <div className="flex shrink-0 items-center gap-3 text-sm text-white/80">
         <span>
           {userName} <span className="text-white/60">· {role}</span>
         </span>
@@ -52,6 +67,8 @@ export function NavBar({ userName, role }: { userName: string; role: string }) {
           Sign out
         </button>
       </div>
+      </div>
+      <p className="px-6 pb-2 text-xs text-white/80">{snapshotLabel}</p>
     </header>
   );
 }

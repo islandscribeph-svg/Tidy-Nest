@@ -8,7 +8,6 @@ import {
   STAGE_LABELS,
   SERVICE_TYPE_LABELS,
   SOURCE_LABELS,
-  DEFAULT_DASHBOARD_FILTERS,
   matchesDashboardFilters,
   projectDate,
   type DashboardFilters,
@@ -19,6 +18,7 @@ import { SelectButton } from "@/components/ui/select-button";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { LineChart } from "@/components/charts/line-chart";
 import type { Stage, ServiceType, Source } from "@prisma/client";
+import { calendarParts, easternParts } from "@/lib/eastern-time";
 
 const MONTH_NAMES = [
   "January",
@@ -41,8 +41,14 @@ function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-export function DashboardView({ deals }: { deals: DealSummary[] }) {
-  const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_DASHBOARD_FILTERS);
+export function DashboardView({
+  deals,
+  initialFilters,
+}: {
+  deals: DealSummary[];
+  initialFilters: DashboardFilters;
+}) {
+  const [filters, setFilters] = useState<DashboardFilters>(initialFilters);
 
   function set<K extends keyof DashboardFilters>(key: K, value: DashboardFilters[K]) {
     setFilters((f) => ({ ...f, [key]: value }));
@@ -58,10 +64,10 @@ export function DashboardView({ deals }: { deals: DealSummary[] }) {
   }, [deals]);
 
   const years = useMemo(() => {
-    const set = new Set<number>([new Date().getUTCFullYear()]);
+    const set = new Set<number>([easternParts(new Date()).year]);
     for (const d of deals) {
       const raw = projectDate(d);
-      if (raw) set.add(new Date(raw).getUTCFullYear());
+      if (raw) set.add(calendarParts(new Date(raw)).year);
     }
     return [...set].sort((a, b) => b - a);
   }, [deals]);
@@ -100,9 +106,9 @@ export function DashboardView({ deals }: { deals: DealSummary[] }) {
     for (const d of scoped) {
       const raw = projectDate(d);
       if (!raw) continue;
-      const date = new Date(raw);
-      if (filters.year !== "all" && date.getUTCFullYear() !== filters.year) continue;
-      counts[date.getUTCMonth()] += 1;
+      const parts = calendarParts(new Date(raw));
+      if (filters.year !== "all" && parts.year !== filters.year) continue;
+      counts[parts.month - 1] += 1;
     }
     return MONTH_NAMES.map((name, i) => ({ label: name.slice(0, 3), value: counts[i] }));
   }, [deals, filters]);

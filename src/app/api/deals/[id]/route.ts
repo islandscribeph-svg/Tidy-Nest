@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { parseDateInput } from "@/lib/eastern-time";
+import { presentDeal } from "@/lib/present";
+import { CANONICAL_STATUS, stageFromMondayStatus } from "@/lib/status-map";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -30,7 +33,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
     },
   });
   if (!deal) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(deal);
+  const siblings = await prisma.deal.findMany({
+    where: { contactId: deal.contactId, NOT: { id: deal.id } },
+    include: { contact: true },
+    orderBy: { updatedAt: "desc" },
+  });
+  const presented = presentDeal(deal);
+  return NextResponse.json({
+    ...presented,
+    relatedDeals: siblings.map((sibling) => ({
+      id: sibling.id,
+      displayName: presentDeal(sibling).displayName,
+      stage: sibling.stage,
+      subStatus: sibling.subStatus,
+    })),
+  });
 }
 
 const updateDealSchema = z.object({
@@ -73,26 +90,40 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { consultDate, projectStartDate, dateClosed, ...rest } = parsed.data;
+  const { consultDate, projectStartDate, dateClosed, stage: requestedStage, subStatus: requestedSubStatus, ...rest } =
+    parsed.data;
 
   const existing = await prisma.deal.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  let stage = requestedStage;
+  let subStatus = requestedSubStatus;
+  if (subStatus) {
+    const mapped = stageFromMondayStatus(subStatus);
+    if (mapped) stage = mapped;
+  }
+  if (stage && stage !== existing.stage && requestedSubStatus === undefined) {
+    const current = stageFromMondayStatus(existing.subStatus);
+    if (current !== stage) subStatus = CANONICAL_STATUS[stage];
+  }
+
   // Closing a deal without an explicit dateClosed stamps it now, so
   // reporting on "when did this close" doesn't silently go blank.
-  const stageChangingToClosed = parsed.data.stage === "CLOSED" && existing.stage !== "CLOSED";
+  const stageChangingToClosed = stage === "CLOSED" && existing.stage !== "CLOSED";
 
   const deal = await prisma.deal.update({
     where: { id },
     data: {
       ...rest,
-      consultDate: consultDate === undefined ? undefined : consultDate ? new Date(consultDate) : null,
+      stage,
+      subStatus,
+      consultDate: consultDate === undefined ? undefined : consultDate ? parseDateInput(consultDate) : null,
       projectStartDate:
-        projectStartDate === undefined ? undefined : projectStartDate ? new Date(projectStartDate) : null,
+        projectStartDate === undefined ? undefined : projectStartDate ? parseDateInput(projectStartDate) : null,
       dateClosed:
         dateClosed !== undefined
           ? dateClosed
-            ? new Date(dateClosed)
+            ? parseDateInput(dateClosed)
             : null
           : stageChangingToClosed
             ? new Date()
@@ -101,5 +132,5 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     include: { contact: true, assignedTo: { select: { id: true, name: true } } },
   });
 
-  return NextResponse.json(deal);
+  return NextResponse.json(presentDeal(deal));
 }

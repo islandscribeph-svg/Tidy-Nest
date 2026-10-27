@@ -13,7 +13,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Stage } from "@prisma/client";
-import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS, STAGE_COLORS } from "@/lib/pipeline";
+import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS, STAGE_COLORS, CANONICAL_STATUS } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
 import { DealCard } from "@/components/deal-card";
 import { DealDrawer } from "@/components/deal-drawer";
@@ -23,24 +23,49 @@ export function PipelineBoard({
   initialDeals,
   users,
   employees,
+  initialDealId = null,
 }: {
   initialDeals: DealSummary[];
   users: { id: string; name: string }[];
   employees: { id: string; name: string; active: boolean }[];
+  initialDealId?: string | null;
 }) {
   const [deals, setDeals] = useState<DealSummary[]>(initialDeals);
   const [activeDeal, setActiveDeal] = useState<DealSummary | null>(null);
-  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDealId);
   const [showNewLead, setShowNewLead] = useState(false);
+  const [query, setQuery] = useState("");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const visibleDeals = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return deals;
+    return deals.filter((deal) => {
+      const hay = [
+        deal.displayName,
+        deal.title,
+        deal.subStatus,
+        deal.invoiceNumber,
+        deal.contact.firstName,
+        deal.contact.lastName,
+        deal.contact.email,
+        deal.contact.city,
+        deal.contact.state,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [deals, query]);
 
   const dealsByStage = useMemo(() => {
     const map = new Map<Stage, DealSummary[]>();
     for (const stage of [...MAIN_STAGES, ...EXIT_STAGES]) map.set(stage, []);
-    for (const deal of deals) map.get(deal.stage)?.push(deal);
+    for (const deal of visibleDeals) map.get(deal.stage)?.push(deal);
     return map;
-  }, [deals]);
+  }, [visibleDeals]);
 
   function handleDragStart(event: DragStartEvent) {
     const deal = deals.find((d) => d.id === event.active.id);
@@ -57,12 +82,13 @@ export function PipelineBoard({
     if (!deal || deal.stage === newStage) return;
 
     const prevDeals = deals;
-    setDeals((ds) => ds.map((d) => (d.id === dealId ? { ...d, stage: newStage } : d)));
+    const subStatus = CANONICAL_STATUS[newStage];
+    setDeals((ds) => ds.map((d) => (d.id === dealId ? { ...d, stage: newStage, subStatus } : d)));
 
     const res = await fetch(`/api/deals/${dealId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: newStage }),
+      body: JSON.stringify({ stage: newStage, subStatus }),
     });
     if (!res.ok) {
       setDeals(prevDeals);
@@ -81,13 +107,26 @@ export function PipelineBoard({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
-        <h1 className="text-lg font-semibold text-neutral-900">Pipeline</h1>
+        <div>
+          <h1 className="text-lg font-semibold text-neutral-900">Pipeline</h1>
+          <p className="text-xs text-neutral-500">
+            Columns follow Monday Status. Board groups are ignored. Moving a row updates this app only.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search"
+            className="w-48 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+          />
         <button
           onClick={() => setShowNewLead(true)}
           className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
         >
           + New Lead
         </button>
+        </div>
       </div>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

@@ -1,18 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { SERVICE_TYPE_LABELS } from "@/lib/pipeline";
+import { formatCalendarDate } from "@/lib/eastern-time";
+import { presentContact, presentDeal } from "@/lib/present";
+import { SERVICE_TYPE_LABELS, projectDate } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(d: Date | null) {
-  if (!d) return null;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
 
 export default async function ContactsPage() {
   const contacts = await prisma.contact.findMany({
     include: {
       deals: {
-        select: { id: true, title: true, serviceType: true, projectStartDate: true },
         orderBy: { createdAt: "desc" },
       },
     },
@@ -34,41 +30,45 @@ export default async function ContactsPage() {
             </tr>
           </thead>
           <tbody>
-            {contacts.map((c) => (
-              <tr key={c.id} className="border-b border-neutral-100 last:border-0">
-                <td className="px-4 py-2 font-medium text-neutral-900 align-top">
-                  {c.firstName} {c.lastName}
-                </td>
-                <td className="px-4 py-2 text-neutral-600 align-top">{c.email || "—"}</td>
-                <td className="px-4 py-2 text-neutral-600 align-top">{c.phone || "—"}</td>
-                <td className="px-4 py-2 text-neutral-600 align-top">
-                  {[c.city, c.state].filter(Boolean).join(", ") || "—"}
-                </td>
-                <td className="px-4 py-2 text-neutral-600 align-top">
-                  {c.deals.length === 0 ? (
-                    "—"
-                  ) : (
-                    <ul className="space-y-1">
-                      {c.deals.map((d) => {
-                        const date = formatDate(d.projectStartDate);
-                        return (
-                          <li key={d.id}>
-                            {d.serviceType ? (
-                              <span className="font-medium text-neutral-800">{SERVICE_TYPE_LABELS[d.serviceType]}</span>
-                            ) : (
-                              <span className="text-neutral-400">No service</span>
-                            )}
-                            {" — "}
-                            {d.title || "Untitled project"}
-                            {date && <span className="text-neutral-400"> ({date})</span>}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {contacts.map((raw) => {
+              const c = presentContact(raw);
+              return (
+                <tr key={c.id} className="border-b border-neutral-100 last:border-0">
+                  <td className="px-4 py-2 align-top font-medium text-neutral-900">
+                    {c.firstName} {c.lastName}
+                  </td>
+                  <td className="px-4 py-2 align-top text-neutral-600">{c.email || "—"}</td>
+                  <td className="px-4 py-2 align-top text-neutral-600">{c.phone || "—"}</td>
+                  <td className="px-4 py-2 align-top text-neutral-600">
+                    {[c.city, c.state].filter(Boolean).join(", ") || c.cityState || "—"}
+                  </td>
+                  <td className="px-4 py-2 align-top text-neutral-600">
+                    {c.deals.length === 0 ? (
+                      "—"
+                    ) : (
+                      <ul className="space-y-1">
+                        {c.deals.map((deal) => {
+                          const shown = presentDeal({ ...deal, contact: c });
+                          const date = formatCalendarDate(projectDate(shown));
+                          return (
+                            <li key={deal.id}>
+                              {deal.serviceType ? (
+                                <span className="font-medium text-neutral-800">{SERVICE_TYPE_LABELS[deal.serviceType]}</span>
+                              ) : (
+                                <span className="text-neutral-400">No service</span>
+                              )}
+                              {" — "}
+                              {shown.displayName}
+                              {date && <span className="text-neutral-400"> ({date})</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {contacts.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-neutral-400">

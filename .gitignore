@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Real Monday snapshots stay off the repo. The only committed fixture is
+# src/lib/monday/fixtures/sample-board.json (fake names, tests only).
+monday-snapshot*.json
+*.snapshot.json

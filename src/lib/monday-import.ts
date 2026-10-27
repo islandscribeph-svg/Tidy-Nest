@@ -3,7 +3,10 @@
 // the one-time /api/setup/import endpoint, so the mapping rules only live
 // in one place.
 import ExcelJS from "exceljs";
-import type { PrismaClient, Stage, ServiceType, Source } from "@prisma/client";
+import type { PrismaClient, ServiceType, Source, Stage } from "@prisma/client";
+import { normalizeImportedDate } from "@/lib/eastern-time";
+import { normalizeSource } from "@/lib/source-map";
+import { stageForItem } from "@/lib/status-map";
 
 const GROUP_NAMES = new Set([
   "New Leads",
@@ -66,19 +69,6 @@ function cellNumber(v: ExcelJS.CellValue): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
-function mapStage(group: string, status: string | undefined): Stage {
-  if (group === "Unqualified") return "UNQUALIFIED";
-  if (group === "Dead" || status === "Died") return "DEAD";
-  if (status === "Client - Start" || status === "Client - Post Project" || group === "In Progress") {
-    return "IN_PROGRESS";
-  }
-  if (group === "New Leads") return "NEW_LEAD";
-  if (group === "Contacted") return "CONTACTED";
-  if (group === "Consultation") return "CONSULTATION";
-  if (group === "Closed") return "CLOSED";
-  return "NEW_LEAD";
-}
-
 const SERVICE_MAP: Record<string, ServiceType> = {
   organizing: "ORGANIZING",
   relocation: "RELOCATION",
@@ -90,21 +80,6 @@ const SERVICE_MAP: Record<string, ServiceType> = {
 function mapService(raw: string | undefined): ServiceType | undefined {
   if (!raw) return undefined;
   return SERVICE_MAP[raw.trim().toLowerCase()] ?? "OTHER";
-}
-
-function normalizeSource(raw: string | undefined, heardAbout: string | undefined) {
-  const text = raw ?? heardAbout;
-  if (!text) return { source: "UNKNOWN" as Source, detail: undefined as string | undefined };
-  const low = text.toLowerCase();
-  let source: Source = "OTHER";
-  if (low.includes("social")) source = "SOCIAL_MEDIA";
-  else if (low.includes("magazine")) source = "MAGAZINE";
-  else if (low.includes("advertisement") || low.includes("article")) source = "ONLINE_AD";
-  else if (low.includes("google")) source = "GOOGLE";
-  else if (low.includes("referr") || low.includes("know each other")) source = "REFERRAL";
-  else if (low === "friend") source = "FRIEND";
-  else if (low.includes("website")) source = "WEBSITE";
-  return { source, detail: text };
 }
 
 export type ParsedRecord = {
@@ -134,6 +109,7 @@ export type ParsedRecord = {
   qbDepositPaymentLink?: string;
   qbFinalPaymentLink?: string;
   notes?: string;
+  mondayGroupTitle?: string;
 };
 
 export async function parseMondayWorkbook(source: string | Buffer | ArrayBuffer): Promise<ParsedRecord[]> {
@@ -184,7 +160,8 @@ export async function parseMondayWorkbook(source: string | Buffer | ArrayBuffer)
       city: cellStr(row.getCell(COLS.city).value),
       state: cellStr(row.getCell(COLS.state).value),
       company: cellStr(row.getCell(COLS.company).value),
-      stage: mapStage(currentGroup, statusCell),
+      stage: stageForItem(statusCell),
+      mondayGroupTitle: currentGroup,
       subStatus: statusCell,
       title: cellStr(row.getCell(COLS.title).value),
       serviceType: mapService(cellStr(row.getCell(COLS.service).value)),
@@ -222,6 +199,7 @@ export async function wipeAllDealsAndContacts(prisma: PrismaClient) {
     const dealCountBefore = await tx.deal.count();
     const contactCountBefore = await tx.contact.count();
 
+    await tx.hourEntry.updateMany({ data: { dealId: null } });
     await tx.reimbursementItem.deleteMany({});
     await tx.reimbursementVendor.deleteMany({});
     await tx.additionalCharge.deleteMany({});
@@ -281,9 +259,10 @@ export async function importMondayRecords(prisma: PrismaClient, records: ParsedR
         estimatedDealValue: r.estimatedDealValue,
         closedDealValue: r.closedDealValue,
         consultFee: r.consultFee,
-        consultDate: r.consultDate,
-        projectStartDate: r.projectStartDate,
-        dateClosed: r.dateClosed,
+        consultDate: r.consultDate ? normalizeImportedDate(r.consultDate) : undefined,
+        projectStartDate: r.projectStartDate ? normalizeImportedDate(r.projectStartDate) : undefined,
+        dateClosed: r.dateClosed ? normalizeImportedDate(r.dateClosed) : undefined,
+        mondayGroupTitle: r.mondayGroupTitle,
         invoiceNumber: r.invoiceNumber,
         qbDepositPaymentLink: r.qbDepositPaymentLink,
         qbFinalPaymentLink: r.qbFinalPaymentLink,

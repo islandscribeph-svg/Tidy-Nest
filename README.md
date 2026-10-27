@@ -1,8 +1,10 @@
 # Tidy Nest CRM / PM
 
-Custom lead pipeline and light project-management tool for Tidy Nest, replacing the "Main Nest" Monday.com board.
+Custom lead pipeline and light project-management tool for Tidy Nest. Monday stays the system of record. This app reads a local JSON snapshot of that board and never calls Monday.
 
-Stack: Next.js (App Router, TypeScript) + Prisma + Postgres, Tailwind. See `/root/.claude/plans` (or ask for `PLAN.md`) for the full design rationale — in short, the old board conflated pipeline **stage** with lead **status** (a "Dead" lead and a "Closed" client both lived in a group called "Closed"), and had no real separation between a *Contact* (a person) and a *Deal* (one pipeline item/engagement). This app fixes both.
+Stack: Next.js (App Router, TypeScript) + Prisma + Postgres, Tailwind. Pipeline stage comes from the Monday Status column, not the board group. A contact (a person) can have more than one deal (one engagement).
+
+For a private two-person sandbox on plain Linux, follow [SANDBOX.md](SANDBOX.md).
 
 ## Dashboard
 
@@ -14,7 +16,7 @@ Year/Month filtering (and the line chart's x-axis) use each deal's own **project
 
 Each pipeline item is a **project** (e.g. "Fall Relocation") belonging to a contact, who may have several projects over time. Within each stage column, projects render as plain color-coded text rows ("Client - Project Name", with the project date on the right) rather than cards — each stage has its own color (see `STAGE_COLORS` in `src/lib/pipeline.ts`), reused consistently on the column header, the row's accent bar, and everywhere else in the app a stage is shown (Dashboard, Calendar).
 
-Stages: **New Leads → Contacted → Consultation → In Progress → Closed**, with **Unqualified** and **Dead** as exit lanes reachable from any stage. Drag a row between columns to change its stage.
+Stages: **New Leads → Contacted → Consultation → In Progress → Closed**, with **Unqualified** and **Died** as exit lanes reachable from any stage. Stage is taken from the Status column (`New Lead`, `Initial Email Sent`, `Client - Start`, `Closed`, `Died`, and the other values mapped in `src/lib/status-map.ts`). The board group is stored and shown, and it does not set the stage. Dragging a row updates the local stage until the next snapshot replace.
 
 Clicking a row opens the project detail modal (centered, not a side drawer), with tabs that appear as the project matures:
 - **Details** (always shown): stage/service/source/value fields and the activity/notes timeline. Stage/Service/Source/Assigned-to are `SelectButton` components (`src/components/ui/select-button.tsx`) — a styled button that opens a floating option list on click, used in place of native `<select>` dropdowns throughout the app's popups/modals.
@@ -31,9 +33,13 @@ Tab visibility is based on the project's current stage reaching that point, not 
 
 ## Employees & Contractors
 
-A separate section (`/employees`) for staff and contractors: name, type, and an hourly rate — independent of whatever rate a project bills the client. Pay periods are semi-monthly (1st–15th, 16th–end of month); each employee's page shows a period selector and that period's hours from two sources merged into one table:
-- **Manual entries** — added directly on the timesheet.
-- **Project hours** — any Services Worksheet row attributed to that person, pulled in automatically and valued at *their* hourly rate (not the project's billing rate), labeled with which project it came from. Editing those rows happens on the project's Worksheet tab (same row, not a copy) so the two stay in sync.
+A separate section (`/employees`) for staff and contractors: name, type, and an hourly rate — independent of whatever rate a project bills the client. Pay periods are semi-monthly (1st–15th, 16th–end of month) in Eastern time. Each employee's page shows that period's hours from:
+
+- **Hours log** (`/hours`) — date, person, client/project, start, end, break, and notes, stored only in this app. New time is entered there. It is not read from Slack, workbooks, or Monday subitems.
+- **Older timesheet rows** — already saved on the employee record. They can still be edited; new ones are not added from this page.
+- **Project hours** — any Services Worksheet row attributed to that person, valued at *their* hourly rate (not the project's billing rate). Editing those rows happens on the project's Worksheet tab.
+
+`/data-problems` lists hygiene flags (duplicate invoices, closed items missing value, date, or a Drive link, missing or mismatched worksheet and PDF names, Died items that still have an invoice number, and free-text dates that could not be parsed). It does not change the underlying rows.
 
 ### Save Contact flow
 
@@ -46,30 +52,38 @@ A new lead isn't a full contact until required fields (name + email-or-phone + s
    npm install
    ```
 
-2. **Database.** Any Postgres works, including a free [Supabase](https://supabase.com) project — use its "Connect" dialog → **ORM** tab (Prisma) to get both connection strings it expects. Copy `.env.example` to `.env` and fill in `DATABASE_URL` (pooled, port 6543), `DIRECT_URL` (direct, port 5432 — used only for running migrations), `SESSION_SECRET` (`openssl rand -base64 32`), and `LEAD_INTAKE_SECRET`.
+2. **Database.** Any Postgres works, including a local database (see [SANDBOX.md](SANDBOX.md)) or a hosted Postgres project. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, `DIRECT_URL` (used by Prisma migrations), `SESSION_SECRET` (`openssl rand -base64 32`), `LEAD_INTAKE_SECRET`, and `ALLOWED_USER_EMAILS` (exactly two staff emails).
 
-3. **Run migrations**
+3. **Run migrations and create the two logins.** Prefer the sandbox command, which also loads `MONDAY_SNAPSHOT_PATH` when it is set:
+
    ```bash
-   npm run db:migrate
+   npm run sandbox:setup
    ```
 
-4. **Create your first login.** Set `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`, then:
+   On a hosted deploy without that command, create each account once with `POST /api/setup/admin` (see below). The route stops accepting new users once two exist.
+
+4. **Load a Monday snapshot** (optional until you have a file). The app does not call Monday.
+
    ```bash
-   npm run db:seed
+   npm run import:snapshot -- "/absolute/path/to/snapshot.json"
    ```
 
-5. **(Optional) Import the legacy Monday export.** Point it at the exported `.xlsx`:
+   An admin can also load `MONDAY_SNAPSHOT_PATH`, or upload the same JSON, from Settings after typing `REPLACE`. Re-running replaces projects and contacts and is safe to repeat. The in-repo sample file is for tests and is not loaded unless you pass it explicitly or set `SANDBOX_ALLOW_FIXTURE=1`.
+
+5. **(Optional) Import a spreadsheet export** instead of, or before, a snapshot. Stage still comes from the Status column, not the group:
+
    ```bash
-   npm run import:monday -- "/path/to/Main_Nest.xlsx" --dry-run   # preview counts first
-   npm run import:monday -- "/path/to/Main_Nest.xlsx"             # actually import
+   npm run import:monday -- "/path/to/Main_Nest.xlsx" --dry-run
+   npm run import:monday -- "/path/to/Main_Nest.xlsx"
    ```
-   The script maps Monday's group + status columns onto the new `Stage` enum (e.g. status `Died` → `DEAD`, `Client - Start`/`Client - Post Project` → `IN_PROGRESS`), normalizes the `Source` free text, and de-dupes contacts by email/phone. It's re-run-safe for contacts (matches existing ones by email/phone) but will create duplicate *deals* if run twice against the same file — only run it once per export.
+
+   Contacts are matched by email or phone. Running it twice creates duplicate deals. Settings → Replace all data is the in-app version (type `WIPE`).
 
 6. **Run the app**
    ```bash
-   npm run dev
+   npm run sandbox:start
    ```
-   Visit http://localhost:3000, sign in with the admin login from step 4.
+   Visit http://localhost:3000 and sign in with one of the two staff emails. Dates and times are shown in Eastern time. The header and footer show when the snapshot was pulled.
 
 ## Website form intake
 
@@ -91,7 +105,11 @@ Creates a draft Contact + a `NEW_LEAD` Deal. Wire this into whatever handles the
 
 ## Design notes
 
-Top nav bar is olive green (`#5c6b3f`) with the white Tidy Nest wordmark (`public/brand/`) — `src/proxy.ts` (this app's auth guard, Next 16 renamed `middleware.ts` to `proxy.ts`) whitelists `/brand` so the logo loads without a session. Chart colors (Dashboard) follow a deliberate categorical/sequential palette validated for colorblind-safe contrast — see `src/lib/chart-colors.ts` and don't hand-pick new chart colors without the same reasoning (categorical = identity, fixed hue order; sequential = one hue, magnitude; never more than ~6 pie slices).
+Top nav bar uses `NEXT_PUBLIC_BRAND_COLOR` (default `#5c6b3f`) and `NEXT_PUBLIC_BRAND_LOGO_PATH` (default `/brand/tidynest-logo-white.webp`). `src/proxy.ts` (this app's auth guard; Next 16 uses `proxy.ts` rather than `middleware.ts`) allows `/brand` so the logo loads without a session. Every other page and API route requires a staff session, except login, password reset, `/api/leads/intake` (header `x-intake-key`), and `/api/setup/*` (header `x-setup-key`). Chart colors (Dashboard) follow a deliberate categorical/sequential palette validated for colorblind-safe contrast — see `src/lib/chart-colors.ts`.
+
+Names in `CLIENT_ALIAS_MAP` are replaced at display, search, and CSV export. The example key Harborlane is not a client. A real surname belongs only in that env value.
+
+Invoice files are labeled `Tidy Nest Invoice NNNN_Client_Description`. Workbooks are labeled `LastName_Project_MonYYYY_Invoice_Workbook`. The client part of a display name uses the alias when one is configured.
 
 ## Forgot password
 
@@ -106,11 +124,12 @@ Reset links expire after 1 hour and are single-use; requesting a new one invalid
 
 ## What's deliberately deferred
 
-Per the build plan, these are scoped for later phases rather than this initial build (the schema already has the relevant fields so they can be wired up without a data model change):
+These stay manual. The schema already has fields for them:
 
-- **Email intake** — parsing inbound emails into New Leads (Phase 2).
-- **QuickBooks sync** — `invoiceNumber`, `qbDepositPaymentLink`, `qbFinalPaymentLink` fields exist on `Deal` but aren't synced with QuickBooks yet; usage in the legacy board was under 2%.
-- **Slack / Google Drive auto-provisioning** — per-client channel/folder creation. Also under 2% usage historically.
+- **Email intake** — parsing inbound emails into New Leads.
+- **QuickBooks sync** — invoice and payment links are pasted or opened in a tab. There is no QuickBooks API client.
+- **Slack / Google Drive auto-provisioning** — the app links to a Slack channel, a worksheet, an invoice PDF, and a Client Drive folder. It does not create channels, read Slack for hours, or change anything in Drive, including Finances folders.
+- **Google Calendar sync** — the in-app calendar is the project-date grid only.
 
 ## Deploying
 
@@ -118,27 +137,29 @@ Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your
 
 ### First-time bootstrap on a fresh deploy
 
-Right after the first deploy, the database has tables but no admin login and no data. A few endpoints handle that one-time setup, all gated by an `x-setup-key` header that must match your `SESSION_SECRET` (they self-disable — return 409 — once a user/deal/employee already exists, so they're safe to leave deployed rather than needing removal):
+Right after the first deploy, the database has tables but no logins and no data. Setup routes are gated by an `x-setup-key` header that must match `SESSION_SECRET`. Set `ALLOWED_USER_EMAILS` to the same two addresses before creating them. Both accounts are admins so either person can open Settings. The admin route returns 409 once two users exist. Passwords are not written into the repo.
 
 ```bash
-# 1. Create the first admin login
-curl -X POST https://<your-deploy>.vercel.app/api/setup/admin \
+# 1. Create the two staff logins (repeat with the second email)
+curl -X POST https://<your-host>/api/setup/admin \
   -H "x-setup-key: $SESSION_SECRET" -H "Content-Type: application/json" \
-  -d '{"name":"Admin","email":"you@tidynest.com","password":"choose-a-real-password"}'
+  -d '{"name":"Owner One","email":"owner.one@example.com","password":"choose-a-real-password"}'
 
-# 2. Import the legacy Monday export (optional, one-time)
-curl -X POST https://<your-deploy>.vercel.app/api/setup/import \
+# 2. Import a spreadsheet export (optional)
+curl -X POST https://<your-host>/api/setup/import \
   -H "x-setup-key: $SESSION_SECRET" \
   -F "file=@/path/to/Main_Nest.xlsx"
 
-# 3. Seed the 5 named employees/contractors (optional, one-time — rates default
-# to $0 and need to be set on the Employees page afterward)
-curl -X POST https://<your-deploy>.vercel.app/api/setup/seed-employees \
-  -H "x-setup-key: $SESSION_SECRET"
+# 3. Seed employees by name (optional). Rates default to $0.
+#    Send {"names":["Alex Example","Blake Example"]} or set SEED_EMPLOYEE_NAMES.
+curl -X POST https://<your-host>/api/setup/seed-employees \
+  -H "x-setup-key: $SESSION_SECRET" -H "Content-Type: application/json" \
+  -d '{"names":["Alex Example","Blake Example"]}'
 
-# Check current state at any time (includes each user's email, for #4 below)
-curl https://<your-deploy>.vercel.app/api/setup/status -H "x-setup-key: $SESSION_SECRET"
+curl https://<your-host>/api/setup/status -H "x-setup-key: $SESSION_SECRET"
 ```
+
+Load Monday data from a snapshot file on the server (`npm run import:snapshot` or Settings → Load snapshot), not from a live Monday connection. `npm run build` runs `prisma migrate deploy` before `next build`.
 
 ### Forgot a login password?
 
@@ -167,4 +188,4 @@ curl -X POST https://<your-deploy>.vercel.app/api/setup/reimport \
 
 **This is destructive and not undoable** — anything entered directly in the live app since the last import (stage moves, notes, worksheet/reimbursement line items, saved contacts) that isn't reflected in the spreadsheet is gone once this runs. Only use it when the spreadsheet should fully replace what's live, not to pull in a few new leads on top of existing work.
 
-Local dev can still use `npm run db:seed` / `npm run import:monday` directly against a local or dev database if you prefer — the `/api/setup/*` routes exist specifically so a fresh Vercel+Supabase deploy can be bootstrapped without shell access to the production database.
+Local dev can use `npm run sandbox:setup`, `npm run db:seed`, or `npm run import:monday` directly. The `/api/setup/*` routes exist so a fresh deploy can be bootstrapped without a shell on the database host. There is no Monday credential to configure.

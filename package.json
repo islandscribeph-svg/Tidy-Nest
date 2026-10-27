@@ -12,7 +12,15 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "import:monday": "tsx scripts/migrate-monday-export.ts"
+    "import:monday": "tsx scripts/migrate-monday-export.ts",
+    "import:snapshot": "tsx scripts/import-snapshot.ts",
+    "sandbox:setup": "tsx scripts/sandbox-setup.ts",
+    "sandbox:start": "next dev",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/lib/monday/snapshot.test.ts src/lib/core.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

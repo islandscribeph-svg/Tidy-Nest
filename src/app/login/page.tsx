@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-8 shadow-sm">
         <h1 className="mb-1 text-xl font-semibold text-neutral-900">Tidy Nest</h1>
-        <p className="mb-6 text-sm text-neutral-500">Sign in to the CRM</p>
+        <p className="mb-6 text-sm text-neutral-500">Staff sign-in. There is no public registration.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">Email</label>

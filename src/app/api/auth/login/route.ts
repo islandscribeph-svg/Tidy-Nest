@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { staffAccessError } from "@/lib/staff-users";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -15,8 +16,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
-  const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const email = parsed.data.email.toLowerCase();
+  const { password } = parsed.data;
+  if (staffAccessError(email)) {
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+  }
+  const user = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
   if (!user) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }

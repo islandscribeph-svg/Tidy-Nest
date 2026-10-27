@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { redactText } from "@/lib/alias";
+import { hoursBetween } from "@/lib/hours";
+import { presentDeal } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -24,7 +27,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const employee = await prisma.employee.findUnique({ where: { id } });
   if (!employee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const [manualEntries, worksheetEntries] = await Promise.all([
+  const [manualEntries, worksheetEntries, hourEntries] = await Promise.all([
     prisma.timesheetEntry.findMany({
       where: { employeeId: id, date: range },
       orderBy: { date: "asc" },
@@ -34,9 +37,17 @@ export async function GET(req: NextRequest, { params }: Params) {
       orderBy: { date: "asc" },
       include: {
         deal: {
-          select: { id: true, title: true, contact: { select: { firstName: true, lastName: true } } },
+          select: { id: true, title: true, contact: { select: { firstName: true, lastName: true, company: true } } },
         },
       },
+    }),
+    prisma.hourEntry.findMany({
+      where: {
+        date: range,
+        OR: [{ employeeId: id }, { personName: { equals: employee.name, mode: "insensitive" } }],
+      },
+      orderBy: { date: "asc" },
+      include: { deal: { include: { contact: true } } },
     }),
   ]);
 
@@ -44,7 +55,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     id: e.id,
     date: e.date,
     hours: e.hours,
-    description: e.description,
+    description: e.description ? redactText(e.description) : e.description,
     source: "manual" as const,
   }));
 
@@ -52,22 +63,37 @@ export async function GET(req: NextRequest, { params }: Params) {
     id: e.id,
     date: e.date,
     hours: e.hours,
-    description: e.description,
+    description: redactText(e.description),
     source: "project" as const,
     dealId: e.deal.id,
-    dealTitle: e.deal.title,
-    contactName: [e.deal.contact.firstName, e.deal.contact.lastName].filter(Boolean).join(" "),
+    dealTitle: e.deal.title ? redactText(e.deal.title) : null,
+    contactName: redactText([e.deal.contact.firstName, e.deal.contact.lastName].filter(Boolean).join(" ")),
   }));
+
+  const hourRows = hourEntries.map((e) => {
+    const hours = hoursBetween(e.startTime, e.endTime, e.breakMinutes);
+    const client = e.deal ? presentDeal(e.deal).displayName : e.clientLabel ? redactText(e.clientLabel) : "";
+    return {
+      id: e.id,
+      date: e.date,
+      hours: hours ?? 0,
+      description: redactText([`${e.startTime}–${e.endTime}`, e.notes].filter(Boolean).join(" · ")),
+      source: "log" as const,
+      clientLabel: client,
+    };
+  });
 
   const totalHours =
     manualEntries.reduce((sum, e) => sum + Number(e.hours), 0) +
-    worksheetEntries.reduce((sum, e) => sum + Number(e.hours), 0);
+    worksheetEntries.reduce((sum, e) => sum + Number(e.hours), 0) +
+    hourRows.reduce((sum, e) => sum + Number(e.hours), 0);
   const totalPay = totalHours * Number(employee.hourlyRate);
 
   return NextResponse.json({
     employee,
     manualEntries: manualRows,
     worksheetEntries: worksheetRows,
+    hourEntries: hourRows,
     totalHours,
     totalPay,
   });

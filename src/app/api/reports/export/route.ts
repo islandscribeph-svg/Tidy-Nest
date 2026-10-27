@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, matchesDashboardFilters, DashboardFilters } from "@/lib/pipeline";
+import { presentDeal } from "@/lib/present";
+import { formatCalendarDate, formatEasternDateTime } from "@/lib/eastern-time";
+import { redactText } from "@/lib/alias";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -33,20 +36,24 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  const deals = allDeals.filter((d) =>
-    matchesDashboardFilters(
-      {
-        title: d.title,
-        dateClosed: d.dateClosed?.toISOString() ?? null,
-        projectStartDate: d.projectStartDate?.toISOString() ?? null,
-        consultDate: d.consultDate?.toISOString() ?? null,
-        contact: d.contact,
-      },
-      filters,
-    ),
-  );
+  const deals = allDeals
+    .map((deal) => presentDeal(deal))
+    .filter((d) =>
+      matchesDashboardFilters(
+        {
+          title: d.title,
+          displayName: d.displayName,
+          dateClosed: d.dateClosed,
+          projectStartDate: d.projectStartDate,
+          consultDate: d.consultDate,
+          contact: d.contact,
+        },
+        filters,
+      ),
+    );
 
   const headers = [
+    "Display Name",
     "First Name",
     "Last Name",
     "Email",
@@ -67,23 +74,24 @@ export async function GET(req: NextRequest) {
   ];
 
   const rows = deals.map((d) => [
+    d.displayName,
     d.contact.firstName,
     d.contact.lastName,
     d.contact.email,
     d.contact.phone,
     STAGE_LABELS[d.stage],
-    d.subStatus,
+    redactText(d.subStatus),
     d.serviceType ? SERVICE_TYPE_LABELS[d.serviceType] : "",
     SOURCE_LABELS[d.source],
     d.sourceDetail,
     d.title,
     d.estimatedDealValue?.toString() ?? "",
     d.closedDealValue?.toString() ?? "",
-    d.consultDate?.toISOString().slice(0, 10) ?? "",
-    d.projectStartDate?.toISOString().slice(0, 10) ?? "",
-    d.dateClosed?.toISOString().slice(0, 10) ?? "",
-    d.assignedTo?.name ?? "",
-    d.createdAt.toISOString().slice(0, 10),
+    formatCalendarDate(d.consultDate) ?? "",
+    formatCalendarDate(d.projectStartDate) ?? "",
+    formatCalendarDate(d.dateClosed) ?? "",
+    d.assignedTo?.name ? redactText(d.assignedTo.name) : "",
+    formatEasternDateTime(d.createdAt) ?? "",
   ]);
 
   const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
