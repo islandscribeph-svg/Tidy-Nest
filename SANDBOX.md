@@ -38,7 +38,7 @@ Set these in `.env`. Use real passwords only in this file. Do not commit `.env`.
 
 Do not set a Monday API token, key, or read-only token. `npm run sandbox:setup` exits if any `MONDAY_*` variable other than `MONDAY_SNAPSHOT_PATH` is set.
 
-`NEXT_PUBLIC_BRAND_COLOR` and `NEXT_PUBLIC_BRAND_LOGO_PATH` are optional. Defaults are `#5c6b3f` and `/brand/tidynest-logo-white.webp`.
+`NEXT_PUBLIC_BRAND_COLOR` and `NEXT_PUBLIC_BRAND_LOGO_PATH` are optional. Defaults are `#5c6b3f` and `/brand/tidynest-logo-white.webp` (the white wordmark, used on the olive header and the login card). The full wordmark is also at `/brand/tidynest-logo.png`. The favicon is `src/app/favicon.ico`.
 
 ## 3. Snapshot file
 
