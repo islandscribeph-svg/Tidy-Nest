@@ -185,12 +185,15 @@ describe("route modules present client text", () => {
     "../app/dashboard/page.tsx",
     "../app/calendar/page.tsx",
     "../app/data-problems/page.tsx",
+    "../app/clients/[id]/page.tsx",
+    "../app/api/clients/[id]/export/route.ts",
+    "../lib/client-report.ts",
   ];
 
   it("imports the alias presenter", () => {
     for (const file of files) {
       const source = readFileSync(new URL(file, import.meta.url), "utf8");
-      assert.match(source, /present(Contact|Deal|ClientJson)|findDataProblems/, file);
+      assert.match(source, /present(Contact|Deal|ClientJson)|findDataProblems|buildClientReport/, file);
     }
   });
 });

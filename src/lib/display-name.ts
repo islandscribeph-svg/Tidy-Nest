@@ -27,6 +27,14 @@ export function projectFromNotes(notes: string | null | undefined): string | nul
   return line ?? null;
 }
 
+export function clientLabel(input: {
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+}): string {
+  return (input.company || input.lastName || input.firstName || "Unnamed").trim() || "Unnamed";
+}
+
 export function buildDisplayName(input: {
   firstName?: string | null;
   lastName?: string | null;
@@ -36,7 +44,7 @@ export function buildDisplayName(input: {
   projectNotes?: string | null;
   projectDateTimeText?: string | null;
 }): string {
-  const client = (input.company || input.lastName || input.firstName || "Unnamed").trim() || "Unnamed";
+  const client = clientLabel(input);
   const project =
     projectFromWorkbookFileName(input.worksheetFileName) ||
     input.title?.trim() ||

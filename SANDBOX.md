@@ -94,4 +94,5 @@ That replace-all is idempotent. Manual hours remain, with their project link cle
 - Hours are entered on the Hours page. They are not read from Slack, workbooks, or Monday subitems.
 - The spreadsheet import on Settings is still available and also maps stage from the Status column.
 - Client Drive and Finances folders are links only. The app does not change Drive.
-- Display, search, and CSV export apply `CLIENT_ALIAS_MAP` after import. The database keeps the name from the snapshot. The browser and exports show the display name.
+- Display, search, CSV export, and the client report apply `CLIENT_ALIAS_MAP` after import. The database keeps the name from the snapshot. The browser and exports show the display name.
+- A contact name on Contacts, a pipeline card, or a deal opens `/clients/[id]`. That page is read-only. Closed deal value is totaled on its own. In progress, consultation, and died projects are listed separately and are not in the total. Missing amounts show as a dash. Download CSV from that page.

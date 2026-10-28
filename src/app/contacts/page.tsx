@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatCalendarDate } from "@/lib/eastern-time";
 import { presentContact, presentDeal } from "@/lib/present";
@@ -35,7 +36,9 @@ export default async function ContactsPage() {
               return (
                 <tr key={c.id} className="border-b border-neutral-100 last:border-0">
                   <td className="px-4 py-2 align-top font-medium text-neutral-900">
-                    {c.firstName} {c.lastName}
+                    <Link href={`/clients/${c.id}`} className="underline">
+                      {c.firstName} {c.lastName}
+                    </Link>
                   </td>
                   <td className="px-4 py-2 align-top text-neutral-600">{c.email || "—"}</td>
                   <td className="px-4 py-2 align-top text-neutral-600">{c.phone || "—"}</td>

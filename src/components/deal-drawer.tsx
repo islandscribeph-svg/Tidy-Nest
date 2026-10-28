@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { X } from "lucide-react";
+import { clientLabel } from "@/lib/display-name";
 import { formatEasternDateTime } from "@/lib/eastern-time";
 import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, SUB_STATUS_SUGGESTIONS, hasReachedConsultation, hasReachedInProgress } from "@/lib/pipeline";
 import type { DealDetail, DealSummary } from "@/lib/types";
@@ -133,7 +135,9 @@ export function DealDrawer({
                 )}
               </div>
               <p className="mt-0.5 text-sm text-neutral-600">
-                {[deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(" ") || "Unnamed contact"}
+                <Link href={`/clients/${deal.contact.id}`} className="underline">
+                  {clientLabel(deal.contact)}
+                </Link>
               </p>
               <p className="text-xs text-neutral-400">{deal.contact.email || deal.contact.phone || "No contact info"}</p>
             </div>
