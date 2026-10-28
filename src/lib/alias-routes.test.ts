@@ -48,7 +48,7 @@ describe("alias on API payloads from the Harborlane fixture", () => {
     ];
     assertNoRawName(body);
     assert.equal(body[0].lastName, "Market Street");
-    assert.match(body[0].email ?? "", /Market Street/);
+    assert.equal(body[0].email, "a…@example.com");
   });
 
   it("POST /api/contacts/save redacts the contact, the deal, and a duplicate candidate", () => {
@@ -78,7 +78,8 @@ describe("alias on API payloads from the Harborlane fixture", () => {
     };
     assertNoRawName(body);
     assert.equal(body.deal.displayName.includes("Market Street"), true);
-    assert.match(body.deal.slackChannelEmail ?? "", /Market Street/);
+    assert.equal(body.deal.slackChannelEmail, "h…@slack.example");
+    assert.equal(body.contact.email, "a…@example.com");
   });
 
   it("GET /api/deals and deal detail redact subitem names, notes, and file names", () => {
@@ -94,7 +95,7 @@ describe("alias on API payloads from the Harborlane fixture", () => {
         slackChannelEmail: spring.slackChannelEmail,
         projectNotes: spring.projectNotes,
         checklistItems: spring.checklist.map((label, index) => ({ id: `sub-${index}`, label })),
-        notes: [{ id: "n1", body: "Left a message for Harborlane" }],
+        notes: [{ id: "n1", body: "Left a message for Harborlane at alex.harborlane@example.com" }],
         contact,
       },
       alias,
@@ -103,7 +104,8 @@ describe("alias on API payloads from the Harborlane fixture", () => {
     assert.equal(spring.checklist.some((label) => /harborlane/i.test(label)), true);
     assertNoRawName(list);
     assert.match(detail.checklistItems[0].label, /Market Street/);
-    assert.match(detail.notes[0].body, /Market Street/);
+    assert.equal(detail.notes[0].body, "Left a message for Market Street at a…@example.com");
+    assert.equal(detail.contact.email, "a…@example.com");
     assert.match(detail.invoiceFileName ?? "", /Market Street/);
     const noteResponse = presentClientJson({ id: "n1", body: "Harborlane confirmed the keys" }, alias);
     assertNoRawName(noteResponse);
@@ -133,6 +135,7 @@ describe("alias on API payloads from the Harborlane fixture", () => {
     );
     const csv = [shown.displayName, shown.contact.lastName, shown.contact.email, shown.worksheetFileName].join(",");
     assert.equal(csv.toLowerCase().includes("harborlane"), false);
+    assert.equal(shown.contact.email, "a…@example.com");
     assert.match(csv, /Market Street/);
     const filters = { year: "all" as const, month: "all" as const, contactId: "all" as const, address: "", title: "" };
     assert.equal(
@@ -147,7 +150,7 @@ describe("alias on API payloads from the Harborlane fixture", () => {
 
   it("keeps the stored surname when a redacted form is saved unchanged", () => {
     assert.equal(preserveStoredText("Market Street", "Harborlane", alias), "Harborlane");
-    assert.equal(preserveStoredText("alex.Market Street@example.com", spring.email, alias), spring.email);
+    assert.equal(preserveStoredText("a…@example.com", spring.email, alias), spring.email);
     assert.equal(preserveStoredText("Someone Else", "Harborlane", alias), "Someone Else");
   });
 });

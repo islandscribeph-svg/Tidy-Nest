@@ -2,14 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { preserveStoredText } from "@/lib/alias";
+import { isMaskedEmail, preserveStoredText } from "@/lib/alias";
 import { presentContact, presentDeal } from "@/lib/present";
 
 const saveContactSchema = z.object({
   dealId: z.string(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z
+    .string()
+    .refine((value) => value === "" || z.string().email().safeParse(value).success || isMaskedEmail(value))
+    .optional()
+    .or(z.literal("")),
   phone: z.string().optional(),
   streetAddress: z.string().optional(),
   city: z.string().optional(),

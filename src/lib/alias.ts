@@ -31,11 +31,39 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const EMAIL_RE = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/giu;
+
+// A masked address from presenters: first character of the local part, an
+// ellipsis, and the domain. The domain is also an ellipsis when it contains
+// the raw name. This is not a deliverable address.
+const MASKED_EMAIL_RE = /^[\p{L}\p{N}]?…@(?:…|[^\s@]+)$/u;
+
+function emailContainsAlias(email: string, rules: AliasRule[]): boolean {
+  const lower = email.toLowerCase();
+  return rules.some((rule) => lower.includes(rule.match.toLowerCase()));
+}
+
+export function maskAliasedEmail(email: string, rules: AliasRule[] = getAliasRules()): string {
+  if (!emailContainsAlias(email, rules)) return email;
+  const at = email.lastIndexOf("@");
+  const local = at >= 0 ? email.slice(0, at) : email;
+  const domain = at >= 0 ? email.slice(at + 1) : "";
+  const initial = local.match(/\p{L}|\p{N}/u)?.[0] ?? "";
+  const shownDomain = domain && !emailContainsAlias(domain, rules) ? domain : "…";
+  return `${initial}…@${shownDomain}`;
+}
+
+export function isMaskedEmail(value: string): boolean {
+  return MASKED_EMAIL_RE.test(value);
+}
+
 // Replaces configured raw names with their display names. Longer keys win
-// so a shorter key cannot partially rewrite a longer one first.
+// so a shorter key cannot partially rewrite a longer one first. An email
+// that contains a raw name is masked instead of having the display name
+// spliced into the address.
 export function redactText(input: string | null | undefined, rules: AliasRule[] = getAliasRules()): string {
   if (!input) return "";
-  let out = input;
+  let out = input.replace(EMAIL_RE, (email) => maskAliasedEmail(email, rules));
   for (const rule of rules) {
     const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${escapeRegExp(rule.match)})(?=$|[^\\p{L}\\p{N}])`, "giu");
     out = out.replace(pattern, `$1${rule.display}`);

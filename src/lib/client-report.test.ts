@@ -83,7 +83,7 @@ describe("client report from the Harborlane fixture", () => {
     const packed = `${JSON.stringify(report)}\n${csv}`;
     assert.equal(packed.toLowerCase().includes("harborlane"), false);
     assert.match(report.name, /Market Street/);
-    assert.match(report.contact.email, /Market Street/);
+    assert.equal(report.contact.email, "a…@example.com");
     assert.match(csv, /Market Street/);
   });
 

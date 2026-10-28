@@ -15,6 +15,11 @@ describe("alias map", () => {
     assert.equal(redactText("Harborlane_Spring", alias), "Market Street_Spring");
     assert.equal(redactText("visit harborlane today", alias), "visit Market Street today");
     assert.equal(redactText("NotHarborlane", alias), "NotHarborlane");
+    assert.equal(redactText("alex.harborlane@example.com", alias), "a…@example.com");
+    assert.equal(redactText("harborlane@slack.example", alias), "h…@slack.example");
+    assert.equal(redactText("office@example.com", alias), "office@example.com");
+    assert.equal(redactText("alex@harborlane.com", alias), "a…@…");
+    assert.equal(redactText("Email alex.harborlane@gmail.com today", alias), "Email a…@gmail.com today");
   });
 });
 
