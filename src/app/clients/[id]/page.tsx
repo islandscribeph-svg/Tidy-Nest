@@ -26,12 +26,13 @@ function DealTable({ lines, showTotal, total }: { lines: ReportLine[]; showTotal
         {lines.map((line) => (
           <tr key={line.id} className="border-b border-neutral-100 last:border-0">
             <td className="px-4 py-2 text-neutral-900">
-              <Link href={`/pipeline?deal=${line.id}`} className="font-medium underline">
+              <Link href={`/pipeline?deal=${line.id}`} prefetch={false} className="font-medium underline">
                 {line.name}
               </Link>
               {line.hasProblem && (
                 <Link
                   href="/data-problems"
+                  prefetch={false}
                   className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800"
                 >
                   Data problem

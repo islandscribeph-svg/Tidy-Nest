@@ -37,7 +37,7 @@ export function EmployeesTable({ initialEmployees }: { initialEmployees: Employe
             {employees.map((e) => (
               <tr key={e.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
                 <td className="px-4 py-2">
-                  <Link href={`/employees/${e.id}`} className="font-medium text-neutral-900 hover:underline">
+                  <Link href={`/employees/${e.id}`} prefetch={false} className="font-medium text-neutral-900 hover:underline">
                     {e.name}
                   </Link>
                 </td>

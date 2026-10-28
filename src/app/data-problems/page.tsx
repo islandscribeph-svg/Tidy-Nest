@@ -62,7 +62,7 @@ export default async function DataProblemsPage({ searchParams }: { searchParams:
             {shown.map((problem) => (
               <tr key={problem.id} className="border-b border-neutral-100 last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/pipeline?deal=${problem.dealId}`} className="font-medium text-neutral-900 underline">
+                  <Link href={`/pipeline?deal=${problem.dealId}`} prefetch={false} className="font-medium text-neutral-900 underline">
                     {problem.displayName}
                   </Link>
                 </td>

@@ -23,6 +23,7 @@ export function DealCard({ deal }: { deal: DealSummary }) {
       <span className="min-w-0 flex-1 truncate text-sm text-neutral-800" title={deal.subStatus ?? label}>
         <Link
           href={`/clients/${deal.contact.id}`}
+          prefetch={false}
           className="underline decoration-neutral-300 underline-offset-2 hover:decoration-neutral-800"
           onClick={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}

@@ -36,7 +36,7 @@ export default async function ContactsPage() {
               return (
                 <tr key={c.id} className="border-b border-neutral-100 last:border-0">
                   <td className="px-4 py-2 align-top font-medium text-neutral-900">
-                    <Link href={`/clients/${c.id}`} className="underline">
+                    <Link href={`/clients/${c.id}`} prefetch={false} className="underline">
                       {c.firstName} {c.lastName}
                     </Link>
                   </td>
