@@ -193,6 +193,35 @@ export function clientReportSheet(report: ClientReport): Sheet {
   return { name: "Client report", headers, rows };
 }
 
+export function activitySheet(
+  events: {
+    createdAt: Date | string;
+    action: string;
+    recordType?: string | null;
+    recordId?: string | null;
+    field?: string | null;
+    oldValue?: string | null;
+    newValue?: string | null;
+    user?: { name?: string | null } | null;
+  }[],
+  rules: AliasRule[] = getAliasRules(),
+): Sheet {
+  const headers = ["When", "Who", "Action", "Record", "Field", "Old", "New"];
+  const rows = events.map((event) => {
+    const shown = presentClientJson(event, rules);
+    return [
+      formatEasternDateTime(event.createdAt) ?? "",
+      shown.user?.name ?? "",
+      shown.action,
+      [shown.recordType, shown.recordId].filter(Boolean).join(" "),
+      shown.field ?? "",
+      shown.oldValue ?? "",
+      shown.newValue ?? "",
+    ];
+  });
+  return { name: "Activity", headers, rows };
+}
+
 export function sheetCsv(sheet: Sheet): string {
   return sheetToCsv(sheet);
 }

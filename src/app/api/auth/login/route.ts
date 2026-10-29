@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, setSessionCookie, verifyPassword } from "@/lib/auth";
 import { staffAccessError } from "@/lib/staff-users";
+import { logActivity } from "@/lib/activity";
 import { presentClientJson } from "@/lib/present";
 
 const loginSchema = z.object({
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   const token = await createSessionToken({ userId: user.id, role: user.role });
   await setSessionCookie(token);
+  await logActivity(prisma, { userId: user.id, action: "sign-in", recordType: "user", recordId: user.id, field: "session", newValue: "signed in" });
 
   return NextResponse.json(presentClientJson({ id: user.id, name: user.name, role: user.role }));
 }

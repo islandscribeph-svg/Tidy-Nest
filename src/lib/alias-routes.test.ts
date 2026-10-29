@@ -183,6 +183,7 @@ describe("route modules present client text", () => {
     "../app/api/filters/route.ts",
     "../app/api/filters/[id]/route.ts",
     "../app/api/contacts/[id]/route.ts",
+    "../app/activity/page.tsx",
     "../app/api/users/route.ts",
     "../app/api/employees/route.ts",
     "../app/api/employees/[id]/route.ts",

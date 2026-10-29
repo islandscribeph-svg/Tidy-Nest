@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { buildClientReport } from "@/lib/client-report";
 import { findDataProblems } from "@/lib/data-problems";
+import { logActivity } from "@/lib/activity";
 import {
+  activitySheet,
   contactsSheet,
   dataProblemsSheet,
   hoursSheet,
@@ -15,7 +17,7 @@ import { sheetToXlsx, type Sheet } from "@/lib/sheet";
 
 type Params = { params: Promise<{ kind: string }> };
 
-const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client"] as const;
+const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client", "activity"] as const;
 type Kind = (typeof KINDS)[number];
 
 function isKind(value: string): value is Kind {
@@ -63,14 +65,36 @@ async function buildSheet(kind: Kind, url: URL): Promise<Sheet | NextResponse> {
   return clientReportSheet(buildClientReport({ contact, deals: contact.deals, problemDealIds }));
 }
 
+async function activity(url: URL): Promise<Sheet> {
+  const events = await prisma.activityEvent.findMany({
+    where: {
+      userId: url.searchParams.get("user") || undefined,
+      recordType: url.searchParams.get("record") || undefined,
+      action: url.searchParams.get("type") || undefined,
+    },
+    include: { user: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 5000,
+  });
+  return activitySheet(events);
+}
+
 export async function GET(req: NextRequest, { params }: Params) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { kind } = await params;
   if (!isKind(kind)) return NextResponse.json({ error: "Unknown export" }, { status: 404 });
 
-  const built = await buildSheet(kind, req.nextUrl);
+  const built = kind === "activity" ? await activity(req.nextUrl) : await buildSheet(kind, req.nextUrl);
   if (built instanceof NextResponse) return built;
+  await logActivity(prisma, {
+    userId: session.userId,
+    action: "export",
+    recordType: "export",
+    recordId: kind,
+    field: "format",
+    newValue: req.nextUrl.searchParams.get("format") === "xlsx" ? "xlsx" : "csv",
+  });
   const format = req.nextUrl.searchParams.get("format") === "xlsx" ? "xlsx" : "csv";
   const stamp = new Date().toISOString().slice(0, 10);
   if (format === "xlsx") {

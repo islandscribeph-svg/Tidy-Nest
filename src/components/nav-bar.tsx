@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/hours", label: "Hours" },
   { href: "/data-problems", label: "Data problems" },
   { href: "/employees", label: "Employees" },
+  { href: "/activity", label: "Activity" },
 ];
 
 export function NavBar({

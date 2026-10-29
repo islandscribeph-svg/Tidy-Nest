@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { buildClientReport } from "@/lib/client-report";
-import { contactsSheet, dataProblemsSheet, hoursSheet, pipelineSheet, clientReportSheet } from "@/lib/exports";
+import { activitySheet, contactsSheet, dataProblemsSheet, hoursSheet, pipelineSheet, clientReportSheet } from "@/lib/exports";
 import { mapSnapshotItem, type MappedSnapshotDeal } from "@/lib/monday/map-item";
 import { parseSnapshot } from "@/lib/monday/parse-snapshot";
 import { sheetText, sheetToXlsx } from "@/lib/sheet";
@@ -89,5 +89,25 @@ describe("excel and csv exports hide the Harborlane surname", () => {
     const pipeline = pipelineSheet(deals, alias);
     assert.match(JSON.stringify(pipeline), /Market Street/);
     assert.match(JSON.stringify(pipeline), /a…@example.com/);
+  });
+
+  it("masks activity log values", () => {
+    const sheet = activitySheet(
+      [
+        {
+          createdAt: "2026-10-29T16:00:00.000Z",
+          action: "edit",
+          recordType: "contact",
+          recordId: "c1",
+          field: "email",
+          oldValue: "alex.harborlane@example.com",
+          newValue: "alex.harborlane@example.com",
+          user: { name: "Peps" },
+        },
+      ],
+      alias,
+    );
+    assert.equal(JSON.stringify(sheet).toLowerCase().includes("harborlane"), false);
+    assert.match(JSON.stringify(sheet), /a…@example.com/);
   });
 });
