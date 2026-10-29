@@ -13,7 +13,9 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Stage } from "@prisma/client";
+import { closedInYear, textMatch } from "@/lib/filter-presets";
 import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS, STAGE_COLORS, CANONICAL_STATUS } from "@/lib/pipeline";
+import { SavedFilterBar } from "@/components/saved-filter-bar";
 import type { DealSummary } from "@/lib/types";
 import { DealCard } from "@/components/deal-card";
 import { ExportLinks } from "@/components/export-links";
@@ -36,14 +38,16 @@ export function PipelineBoard({
   const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDealId);
   const [showNewLead, setShowNewLead] = useState(false);
   const [query, setQuery] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const visibleDeals = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return deals;
     return deals.filter((deal) => {
-      const hay = [
+      if (stageFilter !== "all" && deal.stage !== stageFilter) return false;
+      if (!closedInYear(deal.dateClosed, yearFilter)) return false;
+      return textMatch(query, [
         deal.displayName,
         deal.title,
         deal.subStatus,
@@ -53,13 +57,9 @@ export function PipelineBoard({
         deal.contact.email,
         deal.contact.city,
         deal.contact.state,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
+      ]);
     });
-  }, [deals, query]);
+  }, [deals, query, stageFilter, yearFilter]);
 
   const dealsByStage = useMemo(() => {
     const map = new Map<Stage, DealSummary[]>();
@@ -115,6 +115,15 @@ export function PipelineBoard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <SavedFilterBar
+            page="pipeline"
+            query={{ q: query, stage: stageFilter, year: yearFilter }}
+            onApply={(next) => {
+              setQuery(next.q ?? "");
+              setStageFilter(next.stage || "all");
+              setYearFilter(next.year || "all");
+            }}
+          />
           <ExportLinks href="/api/exports/pipeline" />
           <input
             value={query}

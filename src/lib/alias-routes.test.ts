@@ -180,6 +180,8 @@ describe("route modules present client text", () => {
     "../app/api/reports/export/route.ts",
     "../app/api/exports/[kind]/route.ts",
     "../lib/exports.ts",
+    "../app/api/filters/route.ts",
+    "../app/api/filters/[id]/route.ts",
     "../app/api/users/route.ts",
     "../app/api/employees/route.ts",
     "../app/api/employees/[id]/route.ts",
