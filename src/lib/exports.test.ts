@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { buildClientReport } from "@/lib/client-report";
-import { activitySheet, contactsSheet, dataProblemsSheet, hoursSheet, pipelineSheet, clientReportSheet } from "@/lib/exports";
+import { activitySheet, contactsSheet, dataProblemsSheet, hoursSheet, partnersSheet, pipelineSheet, clientReportSheet } from "@/lib/exports";
 import { mapSnapshotItem, type MappedSnapshotDeal } from "@/lib/monday/map-item";
 import { parseSnapshot } from "@/lib/monday/parse-snapshot";
 import { sheetText, sheetToXlsx } from "@/lib/sheet";
@@ -109,5 +109,22 @@ describe("excel and csv exports hide the Harborlane surname", () => {
     );
     assert.equal(JSON.stringify(sheet).toLowerCase().includes("harborlane"), false);
     assert.match(JSON.stringify(sheet), /a…@example.com/);
+  });
+
+  it("masks partner exports", () => {
+    const sheet = partnersSheet(
+      [
+        {
+          name: "Harborlane Supplies",
+          kind: "VENDOR",
+          email: "alex.harborlane@example.com",
+          status: "ACTIVE",
+          notes: "Call Harborlane",
+        },
+      ],
+      alias,
+    );
+    assert.equal(JSON.stringify(sheet).toLowerCase().includes("harborlane"), false);
+    assert.match(JSON.stringify(sheet), /Market Street/);
   });
 });

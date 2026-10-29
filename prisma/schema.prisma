@@ -64,6 +64,17 @@ enum EmployeeType {
   CONTRACTOR
 }
 
+enum PartnerKind {
+  VENDOR
+  SUPPLIER
+  PARTNER
+}
+
+enum PartnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -94,6 +105,40 @@ model ActivityEvent {
   @@index([createdAt])
   @@index([userId])
   @@index([recordType, recordId])
+}
+
+model Partner {
+  id          String        @id @default(cuid())
+  name        String
+  kind        PartnerKind   @default(VENDOR)
+  contactName String?
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  notes       String?
+  status      PartnerStatus @default(ACTIVE)
+  tags        String[]      @default([])
+  driveUrl    String?
+  slackUrl    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  links       PartnerLink[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model PartnerLink {
+  id        String   @id @default(cuid())
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId    String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String?
+
+  @@index([partnerId])
 }
 
 model SavedFilter {
@@ -142,6 +187,7 @@ model Contact {
   updatedAt     DateTime @updatedAt
 
   deals Deal[]
+  partnerLinks PartnerLink[]
 
   @@index([email])
   @@index([phone])
@@ -231,6 +277,7 @@ model Deal {
   reimbursementVendors ReimbursementVendor[]
   additionalCharges    AdditionalCharge[]
   hourEntries          HourEntry[]
+  partnerLinks         PartnerLink[]
 
   @@index([stage])
   @@index([contactId])

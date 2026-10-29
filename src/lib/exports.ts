@@ -193,6 +193,44 @@ export function clientReportSheet(report: ClientReport): Sheet {
   return { name: "Client report", headers, rows };
 }
 
+export function partnersSheet(
+  partners: {
+    name: string;
+    kind: string;
+    contactName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    address?: string | null;
+    notes?: string | null;
+    status: string;
+    tags?: string[];
+    driveUrl?: string | null;
+    slackUrl?: string | null;
+  }[],
+  rules: AliasRule[] = getAliasRules(),
+): Sheet {
+  const headers = ["Name", "Type", "Contact", "Email", "Phone", "Website", "Address", "Notes", "Status", "Tags", "Drive", "Slack"];
+  const rows = partners.map((partner) => {
+    const shown = presentClientJson(partner, rules);
+    return [
+      shown.name,
+      shown.kind,
+      shown.contactName ?? "",
+      shown.email ?? "",
+      shown.phone ?? "",
+      shown.website ?? "",
+      shown.address ?? "",
+      shown.notes ?? "",
+      shown.status,
+      (shown.tags ?? []).join("|"),
+      shown.driveUrl ?? "",
+      shown.slackUrl ?? "",
+    ];
+  });
+  return { name: "Partners", headers, rows };
+}
+
 export function activitySheet(
   events: {
     createdAt: Date | string;

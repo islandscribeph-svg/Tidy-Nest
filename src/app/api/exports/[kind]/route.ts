@@ -9,6 +9,7 @@ import {
   dataProblemsSheet,
   hoursSheet,
   pipelineSheet,
+  partnersSheet,
   clientReportSheet,
   sheetCsv,
 } from "@/lib/exports";
@@ -17,7 +18,7 @@ import { sheetToXlsx, type Sheet } from "@/lib/sheet";
 
 type Params = { params: Promise<{ kind: string }> };
 
-const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client", "activity"] as const;
+const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client", "activity", "partners"] as const;
 type Kind = (typeof KINDS)[number];
 
 function isKind(value: string): value is Kind {
@@ -39,6 +40,10 @@ async function buildSheet(kind: Kind, url: URL): Promise<Sheet | NextResponse> {
   if (kind === "data-problems") {
     const deals = await prisma.deal.findMany({ include: { contact: true } });
     return dataProblemsSheet(deals);
+  }
+  if (kind === "partners") {
+    const partners = await prisma.partner.findMany({ orderBy: { name: "asc" } });
+    return partnersSheet(partners);
   }
   if (kind === "hours") {
     const entries = await prisma.hourEntry.findMany({
