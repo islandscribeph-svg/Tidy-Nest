@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkSetupKey } from "@/lib/setup-auth";
 import { corsJson, corsPreflight } from "@/lib/cors";
+import { presentClientJson } from "@/lib/present";
 
 export async function OPTIONS() {
   return corsPreflight();
@@ -18,5 +19,5 @@ export async function GET(req: NextRequest) {
     prisma.contact.count(),
   ]);
 
-  return corsJson({ users: userEmails.length, userEmails, deals, contacts });
+  return corsJson(presentClientJson({ users: userEmails.length, userEmails, deals, contacts }));
 }

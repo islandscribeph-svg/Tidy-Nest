@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { staffAccessError } from "@/lib/staff-users";
+import { logActivity } from "@/lib/activity";
+import { presentClientJson } from "@/lib/present";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -15,8 +18,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
-  const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const email = parsed.data.email.toLowerCase();
+  const { password } = parsed.data;
+  if (staffAccessError(email)) {
+    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+  }
+  const user = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
   if (!user) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
@@ -28,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   const token = await createSessionToken({ userId: user.id, role: user.role });
   await setSessionCookie(token);
+  await logActivity(prisma, { userId: user.id, action: "sign-in", recordType: "user", recordId: user.id, field: "session", newValue: "signed in" });
 
-  return NextResponse.json({ id: user.id, name: user.name, role: user.role });
+  return NextResponse.json(presentClientJson({ id: user.id, name: user.name, role: user.role }));
 }

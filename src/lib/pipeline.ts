@@ -1,4 +1,8 @@
 import { Stage, ServiceType, Source } from "@prisma/client";
+import { calendarParts, easternParts } from "@/lib/eastern-time";
+import { CANONICAL_STATUS, stageForItem, stageFromMondayStatus } from "@/lib/status-map";
+
+export { CANONICAL_STATUS, stageForItem, stageFromMondayStatus };
 
 export const STAGE_ORDER: Stage[] = [
   "NEW_LEAD",
@@ -17,7 +21,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
   IN_PROGRESS: "In Progress",
   CLOSED: "Closed",
   UNQUALIFIED: "Unqualified",
-  DEAD: "Dead",
+  DEAD: "Died",
 };
 
 // Suggested sub-statuses per stage. These are convenience presets shown in a
@@ -25,9 +29,21 @@ export const STAGE_LABELS: Record<Stage, string> = {
 // data showed stage-specific status vocab (e.g. "No Comms Needed" only makes
 // sense under Contacted).
 export const SUB_STATUS_SUGGESTIONS: Partial<Record<Stage, string[]>> = {
-  CONTACTED: ["Initial Email Sent", "Follow-up Sent", "No Comms Needed"],
-  CONSULTATION: ["Consultation Scheduled", "Consultation Done"],
-  CLOSED: ["Client - Start", "Client - Post Project"],
+  NEW_LEAD: ["New Lead"],
+  CONTACTED: ["Initial Email Sent", "Follow up email sent", "No Comms Needed"],
+  CONSULTATION: [
+    "For Consultation",
+    "Consultation Done",
+    "Create Proposal",
+    "Proposal Sent",
+    "Interested",
+    "Create Worksheet",
+    "Setup Folders",
+  ],
+  IN_PROGRESS: ["Client - Start", "Client - Post Project"],
+  CLOSED: ["Closed"],
+  UNQUALIFIED: ["Unqualified"],
+  DEAD: ["Died"],
 };
 
 export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
@@ -104,10 +120,10 @@ const IN_PROGRESS_REACHED: Stage[] = ["IN_PROGRESS", "CLOSED", "UNQUALIFIED", "D
 // the record was created/imported: whichever of these is actually set,
 // preferring the most advanced milestone reached.
 export function projectDate(deal: {
-  dateClosed: string | null;
-  projectStartDate: string | null;
-  consultDate: string | null;
-}): string | null {
+  dateClosed: string | Date | null;
+  projectStartDate: string | Date | null;
+  consultDate: string | Date | null;
+}): string | Date | null {
   return deal.dateClosed ?? deal.projectStartDate ?? deal.consultDate ?? null;
 }
 
@@ -119,22 +135,28 @@ export type DashboardFilters = {
   title: string;
 };
 
-export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = {
-  year: new Date().getUTCFullYear(),
-  month: new Date().getUTCMonth() + 1,
-  contactId: "all",
-  address: "",
-  title: "",
-};
+export function defaultDashboardFilters(now = new Date()): DashboardFilters {
+  const today = easternParts(now);
+  return {
+    year: today.year,
+    month: today.month,
+    contactId: "all",
+    address: "",
+    title: "",
+  };
+}
+
+export const DEFAULT_DASHBOARD_FILTERS: DashboardFilters = defaultDashboardFilters();
 
 // Shared between the client-side Dashboard view and the server-side CSV
 // export so "what's on screen" and "what downloads" never drift apart.
 export function matchesDashboardFilters(
   deal: {
     title: string | null;
-    dateClosed: string | null;
-    projectStartDate: string | null;
-    consultDate: string | null;
+    displayName?: string | null;
+    dateClosed: string | Date | null;
+    projectStartDate: string | Date | null;
+    consultDate: string | Date | null;
     contact: { id: string; streetAddress: string | null; city: string | null; state: string | null };
   },
   filters: DashboardFilters,
@@ -142,9 +164,9 @@ export function matchesDashboardFilters(
   if (filters.year !== "all" || filters.month !== "all") {
     const raw = projectDate(deal);
     if (!raw) return false;
-    const d = new Date(raw);
-    if (filters.year !== "all" && d.getUTCFullYear() !== filters.year) return false;
-    if (filters.month !== "all" && d.getUTCMonth() + 1 !== filters.month) return false;
+    const parts = calendarParts(new Date(raw));
+    if (filters.year !== "all" && parts.year !== filters.year) return false;
+    if (filters.month !== "all" && parts.month !== filters.month) return false;
   }
   if (filters.contactId !== "all" && deal.contact.id !== filters.contactId) return false;
   if (filters.address.trim()) {
@@ -155,8 +177,10 @@ export function matchesDashboardFilters(
       .toLowerCase();
     if (!hay.includes(q)) return false;
   }
-  if (filters.title.trim() && !(deal.title ?? "").toLowerCase().includes(filters.title.trim().toLowerCase())) {
-    return false;
+  if (filters.title.trim()) {
+    const q = filters.title.trim().toLowerCase();
+    const hay = [deal.title, deal.displayName].filter(Boolean).join(" ").toLowerCase();
+    if (!hay.includes(q)) return false;
   }
   return true;
 }

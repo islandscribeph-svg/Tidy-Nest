@@ -1,5 +1,4 @@
 // Tidy Nest CRM/PM — Prisma schema
-// See /root/.claude/plans (or PLAN.md at repo root) for the design rationale.
 
 generator client {
   provider = "prisma-client-js"
@@ -65,17 +64,102 @@ enum EmployeeType {
   CONTRACTOR
 }
 
+enum PartnerKind {
+  VENDOR
+  SUPPLIER
+  PARTNER
+}
+
+enum PartnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
   role         Role     @default(STAFF)
+  calendarToken String?  @unique
   createdAt    DateTime @default(now())
 
   assignedDeals       Deal[]               @relation("DealAssignee")
   notes               Note[]
   passwordResetTokens PasswordResetToken[]
+  savedFilters        SavedFilter[]
+  activityEvents      ActivityEvent[]
+}
+
+model ActivityEvent {
+  id         String   @id @default(cuid())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  action     String
+  recordType String?
+  recordId   String?
+  field      String?
+  oldValue   String?  @db.Text
+  newValue   String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([recordType, recordId])
+}
+
+model Partner {
+  id          String        @id @default(cuid())
+  name        String
+  kind        PartnerKind   @default(VENDOR)
+  contactName String?
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  notes       String?
+  status      PartnerStatus @default(ACTIVE)
+  tags        String[]      @default([])
+  driveUrl    String?
+  slackUrl    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  links       PartnerLink[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model PartnerLink {
+  id        String   @id @default(cuid())
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId    String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String?
+
+  @@index([partnerId])
+}
+
+model IntegrationSetting {
+  id              String  @id @default("app")
+  slackNotifyLead Boolean @default(true)
+  slackNotifyStage Boolean @default(true)
+}
+
+model SavedFilter {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  page      String
+  name      String
+  query     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, page, name])
+  @@index([userId, page])
 }
 
 // Forgot-password flow. Tokens are single-use (usedAt) and short-lived
@@ -102,10 +186,15 @@ model Contact {
   state         String?
   company       String?
   notes         String?
+  cityState     String?
+  driveFolderUrl String?
+  importedValues Json?
+  editedFields   String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   deals Deal[]
+  partnerLinks PartnerLink[]
 
   @@index([email])
   @@index([phone])
@@ -152,8 +241,38 @@ model Deal {
   qbDepositPaymentLink String?
   qbFinalPaymentLink   String?
 
+  // Read-only Monday mirror. mondayGroupTitle is stored for reference only;
+  // pipeline stage is derived from the Status column (subStatus), never the group.
+  mondayItemId     String?   @unique
+  mondayUrl        String?
+  mondayGroupTitle String?
+  mondayUpdatedAt  DateTime?
+
+  worksheetUrl      String?
+  worksheetId       String?
+  worksheetFileName String?
+  driveFolderUrl    String?
+  invoicePdfUrl     String?
+  invoiceFileName   String?
+
+  projectDateTimeText String?
+  projectNotes        String? @db.Text
+
+  slackChannelId    String?
+  slackChannelEmail String?
+  proposalUrl       String?
+  contractUrl       String?
+
+  declutterFrequency  String?
+  difficultyLettingGo String?
+  storageSpace        String?
+  dateParseIssues     String?
+
   assignedTo   User?   @relation("DealAssignee", fields: [assignedToId], references: [id])
   assignedToId String?
+
+  importedValues Json?
+  editedFields   String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -164,6 +283,8 @@ model Deal {
   worksheetEntries     WorksheetEntry[]
   reimbursementVendors ReimbursementVendor[]
   additionalCharges    AdditionalCharge[]
+  hourEntries          HourEntry[]
+  partnerLinks         PartnerLink[]
 
   @@index([stage])
   @@index([contactId])
@@ -212,6 +333,7 @@ model Employee {
 
   timesheetEntries TimesheetEntry[]
   worksheetEntries WorksheetEntry[]
+  hourEntries      HourEntry[]
 }
 
 // Manually-entered timesheet hours, not tied to any project. Project-sourced
@@ -261,6 +383,44 @@ model ReimbursementItem {
   quantity    Decimal             @db.Decimal(10, 2)
   unitPrice   Decimal             @db.Decimal(10, 2)
   sortOrder   Int                 @default(0)
+}
+
+// Manual hours log. Separate from Monday and from billable worksheet rows.
+// startTime/endTime are Eastern wall-clock "HH:mm" values. `date` is the
+// Eastern calendar date stored at 12:00 UTC so the day does not shift.
+model HourEntry {
+  id            String    @id @default(cuid())
+  date          DateTime
+  personName    String
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId    String?
+  deal          Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId        String?
+  clientLabel   String?
+  startTime     String
+  endTime       String
+  breakMinutes  Int       @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([date])
+  @@index([dealId])
+  @@index([employeeId])
+}
+
+// One row per snapshot load. This app never contacts Monday.
+model SyncRun {
+  id         String    @id @default(cuid())
+  source     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String
+  itemCount  Int       @default(0)
+  message    String?
+  pulledAt   DateTime?
+  boardId    String?
+  boardName  String?
 }
 
 // Activity/note timeline entry. Attached to a Deal and/or Contact so both

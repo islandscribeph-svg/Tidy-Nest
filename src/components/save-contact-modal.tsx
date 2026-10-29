@@ -128,7 +128,15 @@ export function SaveContactModal({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Email" required error={missingField === "email"}>
-                <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="input" />
+                <input
+                  type="text"
+                  inputMode="email"
+                  autoComplete="email"
+                  spellCheck={false}
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  className="input"
+                />
               </Field>
               <Field label="Phone" required error={missingField === "email"}>
                 <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className="input" />

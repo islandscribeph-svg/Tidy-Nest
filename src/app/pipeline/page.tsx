@@ -1,11 +1,14 @@
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { toPlain } from "@/lib/serialize";
+import { presentClientJson, presentDeal } from "@/lib/present";
 import { PipelineBoard } from "@/components/pipeline-board";
 import type { DealSummary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function PipelinePage() {
+export default async function PipelinePage({ searchParams }: { searchParams: Promise<{ deal?: string }> }) {
+  const { deal: selectedDeal } = await searchParams;
+  const currentUser = await getCurrentUser().catch(() => null);
   const [deals, users, employees] = await Promise.all([
     prisma.deal.findMany({
       include: { contact: true, assignedTo: { select: { id: true, name: true } } },
@@ -24,9 +27,11 @@ export default async function PipelinePage() {
   return (
     <div className="flex h-full flex-col">
       <PipelineBoard
-        initialDeals={toPlain(deals) as unknown as DealSummary[]}
-        users={users}
-        employees={employees}
+        initialDeals={deals.map((deal) => presentDeal(deal)) as unknown as DealSummary[]}
+        initialDealId={selectedDeal ?? null}
+        users={presentClientJson(users)}
+        employees={presentClientJson(employees)}
+        isAdmin={currentUser?.role === "ADMIN"}
       />
     </div>
   );

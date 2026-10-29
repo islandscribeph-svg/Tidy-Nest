@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { secretsMatch } from "@/lib/setup-auth";
 
-// Public endpoint the Tidy Nest website form (or an email-parsing
-// integration, Phase 2) posts new leads to. Protected by a shared secret
-// rather than staff login since the caller is the website, not a person.
+// Website lead intake. Not open to the public: the caller must send
+// x-intake-key matching LEAD_INTAKE_SECRET, or the request is rejected.
 const intakeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().optional(),
@@ -33,8 +33,7 @@ function normalizeSource(raw?: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const key = req.headers.get("x-intake-key");
-  if (!process.env.LEAD_INTAKE_SECRET || key !== process.env.LEAD_INTAKE_SECRET) {
+  if (!secretsMatch(req.headers.get("x-intake-key"), process.env.LEAD_INTAKE_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -60,6 +59,7 @@ export async function POST(req: NextRequest) {
     data: {
       contactId: contact.id,
       stage: "NEW_LEAD",
+      subStatus: "New Lead",
       title: data.title,
       serviceType: data.serviceType,
       detailsOfProject: data.detailsOfProject,

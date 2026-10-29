@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { STAGE_LABELS, SERVICE_TYPE_LABELS, SOURCE_LABELS, matchesDashboardFilters, DashboardFilters } from "@/lib/pipeline";
-
-function csvEscape(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  const str = String(value);
-  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-  return str;
-}
+import { matchesDashboardFilters, type DashboardFilters } from "@/lib/pipeline";
+import { presentDeal } from "@/lib/present";
+import { pipelineSheet, sheetCsv } from "@/lib/exports";
+import { sheetToXlsx } from "@/lib/sheet";
 
 function parseFilters(url: URL): DashboardFilters {
   const yearParam = url.searchParams.get("year");
@@ -33,65 +29,35 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  const deals = allDeals.filter((d) =>
-    matchesDashboardFilters(
+  const deals = allDeals.filter((deal) => {
+    const shown = presentDeal(deal);
+    return matchesDashboardFilters(
       {
-        title: d.title,
-        dateClosed: d.dateClosed?.toISOString() ?? null,
-        projectStartDate: d.projectStartDate?.toISOString() ?? null,
-        consultDate: d.consultDate?.toISOString() ?? null,
-        contact: d.contact,
+        title: shown.title,
+        displayName: shown.displayName,
+        dateClosed: shown.dateClosed,
+        projectStartDate: shown.projectStartDate,
+        consultDate: shown.consultDate,
+        contact: shown.contact,
       },
       filters,
-    ),
-  );
-
-  const headers = [
-    "First Name",
-    "Last Name",
-    "Email",
-    "Phone",
-    "Stage",
-    "Sub-Status",
-    "Service Type",
-    "Source",
-    "Source Detail",
-    "Project Title",
-    "Estimated Deal Value",
-    "Closed Deal Value",
-    "Consult Date",
-    "Project Start Date",
-    "Date Closed",
-    "Assigned To",
-    "Created At",
-  ];
-
-  const rows = deals.map((d) => [
-    d.contact.firstName,
-    d.contact.lastName,
-    d.contact.email,
-    d.contact.phone,
-    STAGE_LABELS[d.stage],
-    d.subStatus,
-    d.serviceType ? SERVICE_TYPE_LABELS[d.serviceType] : "",
-    SOURCE_LABELS[d.source],
-    d.sourceDetail,
-    d.title,
-    d.estimatedDealValue?.toString() ?? "",
-    d.closedDealValue?.toString() ?? "",
-    d.consultDate?.toISOString().slice(0, 10) ?? "",
-    d.projectStartDate?.toISOString().slice(0, 10) ?? "",
-    d.dateClosed?.toISOString().slice(0, 10) ?? "",
-    d.assignedTo?.name ?? "",
-    d.createdAt.toISOString().slice(0, 10),
-  ]);
-
-  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-
-  return new NextResponse(csv, {
+    );
+  });
+  const sheet = pipelineSheet(deals);
+  const stamp = new Date().toISOString().slice(0, 10);
+  if (req.nextUrl.searchParams.get("format") === "xlsx") {
+    const body = await sheetToXlsx(sheet);
+    return new NextResponse(new Uint8Array(body), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="tidy-nest-deals-${stamp}.xlsx"`,
+      },
+    });
+  }
+  return new NextResponse(sheetCsv(sheet), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="tidy-nest-deals-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="tidy-nest-deals-${stamp}.csv"`,
     },
   });
 }

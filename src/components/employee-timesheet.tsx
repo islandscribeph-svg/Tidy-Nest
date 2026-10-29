@@ -23,11 +23,20 @@ type ProjectRow = {
   dealTitle: string | null;
   contactName: string;
 };
+type LogRow = {
+  id: string;
+  date: string | null;
+  hours: string | number;
+  description: string;
+  source: "log";
+  clientLabel: string | null;
+};
 
 type TimesheetResponse = {
   employee: EmployeeDetail;
   manualEntries: ManualRow[];
   worksheetEntries: ProjectRow[];
+  hourEntries?: LogRow[];
   totalHours: number;
   totalPay: number;
 };
@@ -43,8 +52,6 @@ function toDateInput(iso: string) {
 export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
   const [period, setPeriod] = useState<PayPeriod>(() => getPayPeriod(new Date()));
   const [data, setData] = useState<TimesheetResponse | null>(null);
-  const [draft, setDraft] = useState({ date: toDateInput(new Date().toISOString()), hours: "", description: "" });
-  const [adding, setAdding] = useState(false);
 
   function refetch() {
     const params = new URLSearchParams({ start: period.start.toISOString(), end: period.end.toISOString() });
@@ -65,21 +72,6 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
       body: JSON.stringify(patch),
     });
     refetch();
-  }
-
-  async function addManualEntry() {
-    if (!draft.hours || !draft.date) return;
-    setAdding(true);
-    const res = await fetch(`/api/employees/${employeeId}/timesheet-entries`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: draft.date, hours: Number(draft.hours), description: draft.description || undefined }),
-    });
-    setAdding(false);
-    if (res.ok) {
-      setDraft({ date: draft.date, hours: "", description: "" });
-      refetch();
-    }
   }
 
   async function updateManualEntry(id: string, patch: Record<string, unknown>) {
@@ -108,7 +100,7 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
   }
 
   const { employee } = data;
-  const allRows = [...data.manualEntries, ...data.worksheetEntries].sort((a, b) =>
+  const allRows = [...data.manualEntries, ...data.worksheetEntries, ...(data.hourEntries ?? [])].sort((a, b) =>
     (a.date ?? "").localeCompare(b.date ?? ""),
   );
 
@@ -165,6 +157,9 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
           Next →
         </button>
       </div>
+      <p className="mb-3 text-sm text-neutral-500">
+        New time is logged on the <Link href="/hours" className="underline">Hours</Link> page. This table includes those rows plus older worksheet and timesheet lines.
+      </p>
 
       <div className="overflow-hidden rounded-md border border-neutral-200">
         <table className="w-full text-sm">
@@ -178,7 +173,17 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
           </thead>
           <tbody>
             {allRows.map((row) =>
-              row.source === "manual" ? (
+              row.source === "log" ? (
+                <tr key={`log-${row.id}`} className="border-t border-neutral-100 bg-neutral-50/40">
+                  <td className="px-3 py-1.5 text-neutral-600">{row.date ? toDateInput(row.date) : "—"}</td>
+                  <td className="px-3 py-1.5 text-neutral-600">
+                    {row.description}{" "}
+                    <span className="text-xs text-neutral-400">hours log{row.clientLabel ? ` · ${row.clientLabel}` : ""}</span>
+                  </td>
+                  <td className="px-3 py-1.5 text-right text-neutral-600">{row.hours}</td>
+                  <td className="px-2 py-1.5"></td>
+                </tr>
+              ) : row.source === "manual" ? (
                 <tr key={`manual-${row.id}`} className="border-t border-neutral-100">
                   <td className="px-3 py-1.5">
                     <input
@@ -224,42 +229,6 @@ export function EmployeeTimesheet({ employeeId }: { employeeId: string }) {
                 </tr>
               ),
             )}
-            <tr className="border-t border-neutral-100 bg-neutral-50/50">
-              <td className="px-3 py-1.5">
-                <input
-                  type="date"
-                  className="w-full border-0 bg-transparent text-sm focus:outline-none"
-                  value={draft.date}
-                  onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
-                />
-              </td>
-              <td className="px-3 py-1.5">
-                <input
-                  className="w-full border-0 bg-transparent text-sm focus:outline-none"
-                  placeholder="New manual entry..."
-                  value={draft.description}
-                  onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                />
-              </td>
-              <td className="px-3 py-1.5">
-                <input
-                  type="number"
-                  className="w-full border-0 bg-transparent text-right text-sm focus:outline-none"
-                  placeholder="0"
-                  value={draft.hours}
-                  onChange={(e) => setDraft((d) => ({ ...d, hours: e.target.value }))}
-                />
-              </td>
-              <td className="px-2 py-1.5 text-center">
-                <button
-                  onClick={addManualEntry}
-                  disabled={adding}
-                  className="rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
-                >
-                  Add
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>

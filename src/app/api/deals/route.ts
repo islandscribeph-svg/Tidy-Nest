@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { presentDeal } from "@/lib/present";
+import { notifySlack } from "@/lib/slack";
+import { slackStageMessage } from "@/lib/slack-message";
 
 export async function GET() {
   const session = await getSession();
@@ -11,7 +14,7 @@ export async function GET() {
     include: { contact: true, assignedTo: { select: { id: true, name: true } } },
     orderBy: { updatedAt: "desc" },
   });
-  return NextResponse.json(deals);
+  return NextResponse.json(deals.map((deal) => presentDeal(deal)));
 }
 
 const createDealSchema = z.object({
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
     data: {
       contactId: contact.id,
       stage: "NEW_LEAD",
+      subStatus: "New Lead",
       title: data.title,
       serviceType: data.serviceType,
       source: data.source ?? "UNKNOWN",
@@ -65,5 +69,6 @@ export async function POST(req: NextRequest) {
     include: { contact: true },
   });
 
-  return NextResponse.json(deal, { status: 201 });
+  await notifySlack("lead", slackStageMessage(deal, "lead")).catch(() => undefined);
+  return NextResponse.json(presentDeal(deal), { status: 201 });
 }

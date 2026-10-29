@@ -1,19 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { calendarKey, easternDateInputValue, easternParts } from "@/lib/eastern-time";
 import { STAGE_COLORS, projectDate } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
 import { DealDrawer } from "@/components/deal-drawer";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
-
-// Deals store plain dates (no meaningful time-of-day), so bucket by the
-// ISO string's calendar date directly rather than via a local Date object,
-// which can shift the day depending on the viewer's timezone offset.
-function dayKey(iso: string) {
-  return iso.slice(0, 10);
-}
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export function CalendarView({
   deals,
@@ -24,9 +31,9 @@ export function CalendarView({
   users: { id: string; name: string }[];
   employees: { id: string; name: string; active: boolean }[];
 }) {
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth()); // 0-indexed
+  const todayParts = easternParts(new Date());
+  const [year, setYear] = useState(todayParts.year);
+  const [month, setMonth] = useState(todayParts.month - 1); // 0-indexed
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [dealList, setDealList] = useState<DealSummary[]>(deals);
 
@@ -35,14 +42,15 @@ export function CalendarView({
     for (const deal of dealList) {
       const raw = projectDate(deal);
       if (!raw) continue;
-      const key = dayKey(raw);
+      const key = calendarKey(raw);
+      if (!key) continue;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(deal);
     }
     return map;
   }, [dealList]);
 
-  const todayKey = dayKey(today.toISOString());
+  const todayKey = easternDateInputValue();
 
   const cells = useMemo(() => {
     const firstOfMonth = new Date(Date.UTC(year, month, 1));
@@ -65,8 +73,9 @@ export function CalendarView({
   }
 
   function goToToday() {
-    setYear(today.getFullYear());
-    setMonth(today.getMonth());
+    const parts = easternParts(new Date());
+    setYear(parts.year);
+    setMonth(parts.month - 1);
   }
 
   function handleDealSaved(updated: Partial<DealSummary> & { id: string }) {
@@ -85,7 +94,7 @@ export function CalendarView({
             ‹
           </button>
           <span className="w-40 text-center text-sm font-medium text-neutral-800">
-            {MONTH_FORMATTER.format(new Date(Date.UTC(year, month, 1)))}
+            {MONTH_NAMES[month]} {year}
           </span>
           <button
             onClick={() => goToMonth(1)}
@@ -130,7 +139,7 @@ export function CalendarView({
                       const colors = STAGE_COLORS[deal.stage];
                       const name =
                         [deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(" ") || "Unnamed";
-                      const label = deal.title ? `${name} - ${deal.title}` : name;
+                      const label = deal.displayName || (deal.title ? `${name} - ${deal.title}` : name);
                       return (
                         <button
                           key={deal.id}

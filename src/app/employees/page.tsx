@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { toPlain } from "@/lib/serialize";
+import { presentClientJson } from "@/lib/present";
 import { EmployeesTable } from "@/components/employees-table";
 import type { EmployeeSummary } from "@/lib/types";
 
@@ -10,7 +10,7 @@ export default async function EmployeesPage() {
 
   return (
     <div className="p-6">
-      <EmployeesTable initialEmployees={toPlain(employees) as unknown as EmployeeSummary[]} />
+      <EmployeesTable initialEmployees={presentClientJson(employees) as unknown as EmployeeSummary[]} />
     </div>
   );
 }

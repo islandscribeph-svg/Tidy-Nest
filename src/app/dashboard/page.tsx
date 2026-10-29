@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { toPlain } from "@/lib/serialize";
+import { presentDeal } from "@/lib/present";
+import { defaultDashboardFilters } from "@/lib/pipeline";
 import { DashboardView } from "@/components/dashboard-view";
 import type { DealSummary } from "@/lib/types";
 
@@ -11,5 +12,10 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  return <DashboardView deals={toPlain(deals) as unknown as DealSummary[]} />;
+  return (
+    <DashboardView
+      deals={deals.map((deal) => presentDeal(deal)) as unknown as DealSummary[]}
+      initialFilters={defaultDashboardFilters()}
+    />
+  );
 }

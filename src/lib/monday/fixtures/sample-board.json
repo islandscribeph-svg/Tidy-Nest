@@ -1,0 +1,424 @@
+{
+  "board": { "id": "7506018580", "name": "Main Nest sample" },
+  "pulledAt": "2026-10-26T22:15:00.000Z",
+  "items": [
+    {
+      "id": "s-1",
+      "name": "North",
+      "url": "https://example.test/item/s-1",
+      "created_at": "2026-10-01T15:00:00.000Z",
+      "updated_at": "2026-10-02T15:00:00.000Z",
+      "group": { "id": "died_xlsx__1", "title": "Died" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Ada", "value": null },
+        { "id": "lead_status", "type": "status", "text": "New Lead", "value": "{\"label\":\"New Lead\"}" },
+        { "id": "single_select__1", "type": "status", "text": "Organizing", "value": null },
+        { "id": "lead_email", "type": "email", "text": "ada.north@example.com", "value": null },
+        { "id": "lead_phone", "type": "phone", "text": "555-0101", "value": null },
+        { "id": "text_mkrp7k40", "type": "text", "text": "Mapleburg", "value": null },
+        { "id": "text_mkrpy1e0", "type": "text", "text": "CT", "value": null },
+        { "id": "status_11__1", "type": "status", "text": "Referral", "value": null },
+        { "id": "not_a_real_column", "type": "text", "text": "ignore me", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-2",
+      "name": "Ellis",
+      "url": "https://example.test/item/s-2",
+      "created_at": "2026-10-03T15:00:00.000Z",
+      "updated_at": "2026-10-03T15:00:00.000Z",
+      "group": { "id": "new_group11840__1", "title": "Contacted" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Jules", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Initial Email Sent", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Relocation", "value": null },
+        { "id": "lead_email", "type": "email", "text": "jules.ellis@example.com", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-3",
+      "name": "Hale",
+      "url": "https://example.test/item/s-3",
+      "created_at": "2026-10-04T15:00:00.000Z",
+      "updated_at": "2026-10-04T15:00:00.000Z",
+      "group": { "id": "new_group__1", "title": "Consultation" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Rowan", "value": null },
+        { "id": "lead_status", "type": "status", "text": "For Consultation", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Home Management", "value": null },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Hale_Pantry Reset_Oct2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/haleworksheet1/edit\",\"text\":\"Hale_Pantry Reset_Oct2026_Invoice_Workbook\"}"
+        },
+        {
+          "id": "link_mkrx8av1",
+          "type": "link",
+          "text": "Client folder",
+          "value": "{\"url\":\"https://drive.google.com/drive/folders/hale1\",\"text\":\"Client folder\"}"
+        },
+        { "id": "text_mkrx8yj8", "type": "text", "text": "Thu Oct 22, 2026 6:30am-10:30am ET - pantry reset", "value": null }
+      ],
+      "subitems": [
+        {
+          "id": "sub-1",
+          "name": "Qualify inquiry",
+          "column_values": [{ "id": "status", "type": "status", "text": "Task", "value": null }]
+        },
+        {
+          "id": "sub-2",
+          "name": "Worksheet hours",
+          "column_values": [{ "id": "status", "type": "status", "text": "Time Entry", "value": null }]
+        }
+      ]
+    },
+    {
+      "id": "s-4",
+      "name": "Brooks",
+      "url": "https://example.test/item/s-4",
+      "created_at": "2026-10-05T15:00:00.000Z",
+      "updated_at": "2026-10-05T15:00:00.000Z",
+      "group": { "id": "new_group__1", "title": "Consultation" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Mina", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Client - Start", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Organizing", "value": null },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Brooks_Attic_Oct2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/brookssheet/edit\"}"
+        },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/brooks1\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-5",
+      "name": "Doyle",
+      "url": "https://example.test/item/s-5",
+      "created_at": "2026-10-06T15:00:00.000Z",
+      "updated_at": "2026-10-06T15:00:00.000Z",
+      "group": { "id": "new_group93949__1", "title": "In-Progress" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Chris", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Client - Start", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Organizing", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-6",
+      "name": "Ibarra",
+      "url": "https://example.test/item/s-6",
+      "created_at": "2026-09-01T15:00:00.000Z",
+      "updated_at": "2026-10-01T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Noah", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Organizing", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2401", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "1800", "value": "\"1800\"" },
+        { "id": "date_closed__1", "type": "date", "text": "2026-10-01", "value": "{\"date\":\"2026-10-01\"}" },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/ibarra1\"}" },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Ibarra_Organizing_Oct2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/ibarrasheet/edit\"}"
+        },
+        {
+          "id": "invoice_file__1",
+          "type": "text",
+          "text": "Tidy Nest Invoice 2401_Ibarra Organizing Oct 2026.pdf",
+          "value": "{\"url\":\"https://drive.google.com/file/d/pdf2401/view\"}"
+        }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-7",
+      "name": "Quill",
+      "url": "https://example.test/item/s-7",
+      "created_at": "2026-09-02T15:00:00.000Z",
+      "updated_at": "2026-10-02T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Pia", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2402", "value": null },
+        { "id": "date_closed__1", "type": "date", "text": "2026-10-02", "value": null },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/quill1\"}" },
+        { "id": "worksheet__1", "type": "text", "text": "Quill_Closet_Oct2026_Invoice_Workbook", "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/quillsheet/edit\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-8",
+      "name": "Voss",
+      "url": "https://example.test/item/s-8",
+      "created_at": "2026-09-03T15:00:00.000Z",
+      "updated_at": "2026-10-03T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Elena", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2403", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "900", "value": null },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/voss1\"}" },
+        { "id": "worksheet__1", "type": "text", "text": "Voss_Pantry_Oct2026_Invoice_Workbook", "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/vosssheet/edit\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-9",
+      "name": "Ortiz",
+      "url": "https://example.test/item/s-9",
+      "created_at": "2026-09-04T15:00:00.000Z",
+      "updated_at": "2026-10-04T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Samir", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2404", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "1200", "value": null },
+        { "id": "date_closed__1", "type": "date", "text": "2026-10-04", "value": null },
+        { "id": "worksheet__1", "type": "text", "text": "Ortiz_Garage_Oct2026_Invoice_Workbook", "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/ortizsheet/edit\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-10",
+      "name": "Cho",
+      "url": "https://example.test/item/s-10",
+      "created_at": "2026-09-05T15:00:00.000Z",
+      "updated_at": "2026-10-05T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Lena", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2405", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "500", "value": null },
+        { "id": "date_closed__1", "type": "date", "text": "2026-10-05", "value": null },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/cho1\"}" },
+        { "id": "worksheet__1", "type": "text", "text": "Cho_Office_Oct2026_Invoice_Workbook", "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/chosheet/edit\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-11",
+      "name": "Park",
+      "url": "https://example.test/item/s-11",
+      "created_at": "2026-10-07T15:00:00.000Z",
+      "updated_at": "2026-10-07T15:00:00.000Z",
+      "group": { "id": "new_group__1", "title": "Consultation" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Owen", "value": null },
+        { "id": "lead_status", "type": "status", "text": "For Consultation", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2405", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-12",
+      "name": "Holm",
+      "url": "https://example.test/item/s-12",
+      "created_at": "2026-08-01T15:00:00.000Z",
+      "updated_at": "2026-08-02T15:00:00.000Z",
+      "group": { "id": "died_xlsx__1", "title": "Died" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Greta", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Died", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2390", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "125", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-13",
+      "name": "Moss",
+      "url": "https://example.test/item/s-13",
+      "created_at": "2026-08-03T15:00:00.000Z",
+      "updated_at": "2026-08-03T15:00:00.000Z",
+      "group": { "id": "died_xlsx__1", "title": "Died" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Ivan", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Died", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-14",
+      "name": "Solano",
+      "url": "https://example.test/item/s-14",
+      "created_at": "2026-07-01T15:00:00.000Z",
+      "updated_at": "2026-07-01T15:00:00.000Z",
+      "group": { "id": "new_group71344__1", "title": "Unqualified" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Bea", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Unqualified", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Maintenance", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-15",
+      "name": "Harborlane",
+      "url": "https://example.test/item/s-15",
+      "created_at": "2026-03-01T15:00:00.000Z",
+      "updated_at": "2026-03-02T15:00:00.000Z",
+      "group": { "id": "new_group93949__1", "title": "In-Progress" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Alex", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Client - Start", "value": null },
+        { "id": "single_select__1", "type": "status", "text": "Home Management", "value": null },
+        { "id": "lead_email", "type": "email", "text": "alex.harborlane@example.com", "value": null },
+        { "id": "email_mkr663ra", "type": "email", "text": "harborlane@slack.example", "value": null },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Harborlane_Spring Organizing_Mar2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/harbor1/edit\"}"
+        },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/harbor1\"}" },
+        { "id": "long_text_mks69hr8", "type": "long_text", "text": "Spring organizing visit", "value": null }
+      ],
+      "subitems": [{ "id": "sub-harbor", "name": "Confirm Harborlane key handover", "column_values": [] }]
+    },
+    {
+      "id": "s-16",
+      "name": "Harborlane",
+      "url": "https://example.test/item/s-16",
+      "created_at": "2026-01-10T15:00:00.000Z",
+      "updated_at": "2026-01-20T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Alex", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "lead_email", "type": "email", "text": "alex.harborlane@example.com", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2406", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "2400", "value": null },
+        { "id": "date_closed__1", "type": "date", "text": "2026-01-20", "value": null },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/harbor1\"}" },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Harborlane_Winter Closet_Jan2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/harbor2/edit\"}"
+        },
+        {
+          "id": "invoice_file__1",
+          "type": "text",
+          "text": "Tidy Nest Invoice 2406_Harborlane Winter Jan 2026.pdf",
+          "value": "{\"url\":\"https://drive.google.com/file/d/pdf2406/view\"}"
+        }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-17",
+      "name": "Marlow",
+      "url": "https://example.test/item/s-17",
+      "created_at": "2026-10-08T15:00:00.000Z",
+      "updated_at": "2026-10-08T15:00:00.000Z",
+      "group": { "id": "new_group93949__1", "title": "In-Progress" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Ida", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Client - Start", "value": null },
+        {
+          "id": "worksheet__1",
+          "type": "text",
+          "text": "Quill_Garage_Oct2026_Invoice_Workbook",
+          "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/wrongsheet/edit\"}"
+        },
+        {
+          "id": "invoice_file__1",
+          "type": "text",
+          "text": "Tidy Nest Invoice 2407_Harper Closet Oct 2026.pdf",
+          "value": "{\"url\":\"https://drive.google.com/file/d/pdf2407/view\"}"
+        }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-18",
+      "name": "Nguyen",
+      "url": "https://example.test/item/s-18",
+      "created_at": "2026-09-08T15:00:00.000Z",
+      "updated_at": "2026-10-08T15:00:00.000Z",
+      "group": { "id": "new_group99104__1", "title": "Closed" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Theo", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Closed", "value": null },
+        { "id": "text_mkw395w0", "type": "text", "text": "2408", "value": null },
+        { "id": "numeric__1", "type": "numbers", "text": "700", "value": null },
+        { "id": "date_closed__1", "type": "date", "text": "2026-10-08", "value": null },
+        { "id": "link_mkrx8av1", "type": "link", "text": null, "value": "{\"url\":\"https://drive.google.com/drive/folders/nguyen1\"}" }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-19",
+      "name": "Brooks",
+      "url": "https://example.test/item/s-19",
+      "created_at": "2026-10-09T15:00:00.000Z",
+      "updated_at": "2026-10-09T15:00:00.000Z",
+      "group": { "id": "new_group__1", "title": "Consultation" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Nia", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Consultation Done", "value": null },
+        { "id": "text_mkrx8yj8", "type": "text", "text": "sometime next spring", "value": null },
+        { "id": "lead_email", "type": "email", "text": "nia.brooks@example.com", "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-20",
+      "name": "Abel",
+      "url": null,
+      "created_at": "not-a-date",
+      "updated_at": null,
+      "group": null,
+      "column_values": [
+        { "id": "lead_status", "type": "status", "text": null, "value": null },
+        { "id": "mystery", "type": "text", "text": null, "value": "{not json" },
+        { "id": "numeric__1", "type": "numbers", "text": "n/a", "value": null }
+      ],
+      "subitems": [{ "id": "bad-sub", "name": "Loose note", "column_values": [] }]
+    },
+    {
+      "id": "s-21",
+      "name": "Pell",
+      "url": "https://example.test/item/s-21",
+      "created_at": "2026-10-10T15:00:00.000Z",
+      "updated_at": "2026-10-11T15:00:00.000Z",
+      "group": { "id": "new_group93949__1", "title": "In-Progress" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Hugo", "value": null },
+        { "id": "lead_status", "type": "status", "text": "Client - Post Project", "value": null },
+        { "id": "worksheet__1", "type": "text", "text": null, "value": "{\"url\":\"https://docs.google.com/spreadsheets/d/pellsheet/edit\"}" },
+        { "id": "text_mkrxteh4", "type": "text", "text": null, "value": null }
+      ],
+      "subitems": []
+    },
+    {
+      "id": "s-22",
+      "name": "Trent",
+      "url": "https://example.test/item/s-22",
+      "created_at": "2026-10-12T15:00:00.000Z",
+      "updated_at": "2026-10-12T15:00:00.000Z",
+      "group": { "id": "new_group__1", "title": "Consultation" },
+      "column_values": [
+        { "id": "first_name0__1", "type": "text", "text": "Willa", "value": null },
+        { "id": "lead_status", "type": "status", "text": "No Comms Needed", "value": null }
+      ],
+      "subitems": []
+    },
+    null,
+    "not-an-item"
+  ]
+}

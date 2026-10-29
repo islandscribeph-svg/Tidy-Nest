@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { preserveStoredText } from "@/lib/alias";
+import { presentClientJson } from "@/lib/present";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -19,12 +21,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
+  const existing = await prisma.reimbursementVendor.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const vendor = await prisma.reimbursementVendor.update({
     where: { id },
-    data: parsed.data,
+    data: {
+      ...parsed.data,
+      vendorName:
+        parsed.data.vendorName === undefined
+          ? undefined
+          : preserveStoredText(parsed.data.vendorName, existing.vendorName) ?? parsed.data.vendorName,
+    },
     include: { items: true },
   });
-  return NextResponse.json(vendor);
+  return NextResponse.json(presentClientJson(vendor));
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {

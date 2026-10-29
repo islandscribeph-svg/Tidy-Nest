@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { staffAccessError } from "@/lib/staff-users";
 
 const schema = z.object({ email: z.string().email() });
 
@@ -16,7 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const email = parsed.data.email.toLowerCase();
+  const user = staffAccessError(email)
+    ? null
+    : await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
 
   if (user) {
     // A fresh request invalidates any still-outstanding tokens for this

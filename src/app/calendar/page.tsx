@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { toPlain } from "@/lib/serialize";
+import { presentClientJson, presentDeal } from "@/lib/present";
 import { CalendarView } from "@/components/calendar-view";
 import type { DealSummary } from "@/lib/types";
 
@@ -20,9 +20,9 @@ export default async function CalendarPage() {
 
   return (
     <CalendarView
-      deals={toPlain(deals) as unknown as DealSummary[]}
-      users={users}
-      employees={employees}
+      deals={deals.map((deal) => presentDeal(deal)) as unknown as DealSummary[]}
+      users={presentClientJson(users)}
+      employees={presentClientJson(employees)}
     />
   );
 }
