@@ -14,11 +14,12 @@ import {
   sheetCsv,
 } from "@/lib/exports";
 import { prisma } from "@/lib/prisma";
-import { sheetToXlsx, type Sheet } from "@/lib/sheet";
+import { buildReports, reportSheets } from "@/lib/reports";
+import { sheetToCsv, sheetToXlsx, sheetsToXlsx, type Sheet } from "@/lib/sheet";
 
 type Params = { params: Promise<{ kind: string }> };
 
-const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client", "activity", "partners"] as const;
+const KINDS = ["pipeline", "contacts", "data-problems", "hours", "client", "activity", "partners", "reports"] as const;
 type Kind = (typeof KINDS)[number];
 
 function isKind(value: string): value is Kind {
@@ -89,6 +90,28 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { kind } = await params;
   if (!isKind(kind)) return NextResponse.json({ error: "Unknown export" }, { status: 404 });
+
+  if (kind === "reports") {
+    const [deals, hours] = await Promise.all([
+      prisma.deal.findMany({ include: { contact: true } }),
+      prisma.hourEntry.findMany({ include: { deal: { include: { contact: true } } } }),
+    ]);
+    const sheets = reportSheets(buildReports(deals, hours));
+    await logActivity(prisma, { userId: session.userId, action: "export", recordType: "export", recordId: "reports", field: "format", newValue: req.nextUrl.searchParams.get("format") === "xlsx" ? "xlsx" : "csv" });
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (req.nextUrl.searchParams.get("format") === "xlsx") {
+      const body = await sheetsToXlsx(sheets);
+      return new NextResponse(new Uint8Array(body), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="tidy-nest-reports-${stamp}.xlsx"`,
+        },
+      });
+    }
+    return new NextResponse(sheets.map((sheet) => sheetToCsv(sheet)).join("\n\n"), {
+      headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="tidy-nest-reports-${stamp}.csv"` },
+    });
+  }
 
   const built = kind === "activity" ? await activity(req.nextUrl) : await buildSheet(kind, req.nextUrl);
   if (built instanceof NextResponse) return built;

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@media print {
+  header, footer, nav { display: none !important; }
+  body { background: white; }
+}
+
 :root {
   --background: #fafafa;
   --foreground: #171717;
@@ -19,5 +24,16 @@ body {
 @layer components {
   .input {
     @apply w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none;
+  }
+}
+
+@media print {
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+  body {
+    background: white;
   }
 }

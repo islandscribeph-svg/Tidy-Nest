@@ -21,15 +21,21 @@ export function sheetToCsv(sheet: Sheet): string {
   return lines.map((row) => row.map(csvEscape).join(",")).join("\n");
 }
 
-export async function sheetToXlsx(sheet: Sheet): Promise<Buffer> {
+export async function sheetsToXlsx(sheets: Sheet[]): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Tidy Nest";
-  const tab = workbook.addWorksheet(sheet.name.slice(0, 31));
-  tab.addRow(sheet.headers);
-  for (const row of sheet.rows) tab.addRow(row.map((value) => value ?? ""));
-  tab.getRow(1).font = { bold: true };
+  for (const sheet of sheets) {
+    const tab = workbook.addWorksheet(sheet.name.slice(0, 31));
+    tab.addRow(sheet.headers);
+    for (const row of sheet.rows) tab.addRow(row.map((value) => value ?? ""));
+    tab.getRow(1).font = { bold: true };
+  }
   const out = await workbook.xlsx.writeBuffer();
   return Buffer.from(out);
+}
+
+export async function sheetToXlsx(sheet: Sheet): Promise<Buffer> {
+  return sheetsToXlsx([sheet]);
 }
 
 export async function sheetText(buffer: Buffer): Promise<string> {
