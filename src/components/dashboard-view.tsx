@@ -165,10 +165,17 @@ export function DashboardView({
         <div className="flex shrink-0 gap-2">
           <a
             href={`/api/reports/export?${exportParams.toString()}`}
-            className="flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            className="flex min-h-10 items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             <Download size={14} />
             Export CSV ({stats.total})
+          </a>
+          <a
+            href={`/api/reports/export?${exportParams.toString()}&format=xlsx`}
+            className="flex min-h-10 items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <Download size={14} />
+            Export Excel
           </a>
           <Link
             href="/pipeline"

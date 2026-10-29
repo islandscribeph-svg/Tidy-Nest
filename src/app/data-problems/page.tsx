@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExportLinks } from "@/components/export-links";
 import { prisma } from "@/lib/prisma";
 import { findDataProblems, problemLabel, type ProblemCode } from "@/lib/data-problems";
 
@@ -26,10 +27,15 @@ export default async function DataProblemsPage({ searchParams }: { searchParams:
 
   return (
     <div className="p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
       <h1 className="text-lg font-semibold text-neutral-900">Data problems</h1>
       <p className="mt-1 mb-4 max-w-3xl text-sm text-neutral-500">
         These rows are flagged and left as they are. Nothing here is rewritten in Monday or in the snapshot file.
       </p>
+        </div>
+        <ExportLinks href="/api/exports/data-problems" />
+      </div>
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((filter) => {
           const count =
@@ -49,7 +55,7 @@ export default async function DataProblemsPage({ searchParams }: { searchParams:
           );
         })}
       </div>
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
             <tr>

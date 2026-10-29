@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatCalendarDate } from "@/lib/eastern-time";
 import { presentContact, presentDeal } from "@/lib/present";
+import { ExportLinks } from "@/components/export-links";
 import { SERVICE_TYPE_LABELS, projectDate } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,11 @@ export default async function ContactsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-lg font-semibold text-neutral-900">Contacts</h1>
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold text-neutral-900">Contacts</h1>
+        <ExportLinks href="/api/exports/contacts" />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
             <tr>

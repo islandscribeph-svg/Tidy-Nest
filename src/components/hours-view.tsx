@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ExportLinks } from "@/components/export-links";
 import { easternDateInputValue } from "@/lib/eastern-time";
 
 type HourRow = {
@@ -95,10 +96,15 @@ export function HoursView() {
 
   return (
     <div className="mx-auto max-w-5xl p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div>
       <h1 className="text-lg font-semibold text-neutral-900">Hours</h1>
       <p className="mt-1 mb-4 text-sm text-neutral-500">
         Manual time log in Eastern time. These hours stay in this app. They are not read from Monday, Slack, or worksheets.
       </p>
+      </div>
+      <ExportLinks href="/api/exports/hours" />
+      </div>
 
       <form onSubmit={addEntry} className="mb-6 grid gap-3 rounded-lg border border-neutral-200 bg-white p-4 sm:grid-cols-2">
         <label className="text-sm">

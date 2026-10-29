@@ -5,6 +5,7 @@ import type { Stage } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildClientReport, type ReportLine } from "@/lib/client-report";
 import { findDataProblems } from "@/lib/data-problems";
+import { ExportLinks } from "@/components/export-links";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
@@ -117,12 +118,7 @@ export default async function ClientReportPage({ params }: { params: Promise<{ i
             Read-only. This page does not change Monday or the records in this app. Dates are Eastern Time.
           </p>
         </div>
-        <a
-          href={`/api/clients/${id}/export`}
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          Download CSV
-        </a>
+        <ExportLinks href={`/api/exports/client?id=${id}`} label="Download" />
       </div>
 
       <dl className="mb-4 grid gap-2 text-sm sm:grid-cols-2">

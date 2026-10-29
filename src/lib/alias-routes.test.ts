@@ -178,6 +178,8 @@ describe("route modules present client text", () => {
     "../app/api/hours/route.ts",
     "../app/api/hours/[id]/route.ts",
     "../app/api/reports/export/route.ts",
+    "../app/api/exports/[kind]/route.ts",
+    "../lib/exports.ts",
     "../app/api/users/route.ts",
     "../app/api/employees/route.ts",
     "../app/api/employees/[id]/route.ts",

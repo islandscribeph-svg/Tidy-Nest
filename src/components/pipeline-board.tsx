@@ -16,6 +16,7 @@ import type { Stage } from "@prisma/client";
 import { MAIN_STAGES, EXIT_STAGES, STAGE_LABELS, STAGE_COLORS, CANONICAL_STATUS } from "@/lib/pipeline";
 import type { DealSummary } from "@/lib/types";
 import { DealCard } from "@/components/deal-card";
+import { ExportLinks } from "@/components/export-links";
 import { DealDrawer } from "@/components/deal-drawer";
 import { NewLeadModal } from "@/components/new-lead-modal";
 
@@ -113,7 +114,8 @@ export function PipelineBoard({
             Columns follow Monday Status. Board groups are ignored. Moving a row updates this app only.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportLinks href="/api/exports/pipeline" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
