@@ -147,4 +147,10 @@ export type DealDetail = DealSummary & {
   qbDepositPaymentLink?: string | null;
   qbFinalPaymentLink?: string | null;
   relatedDeals?: { id: string; displayName: string; stage: Stage; subStatus: string | null }[];
+  editedFields?: string[];
+  importedValues?: Record<string, string | number | null> | null;
+  problems?: { id: string; detail: string; displayName: string }[];
+  driveFolderUrl?: string | null;
+  proposalUrl?: string | null;
+  contractUrl?: string | null;
 };

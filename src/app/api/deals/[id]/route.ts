@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { parseDateInput } from "@/lib/eastern-time";
 import { preserveStoredText } from "@/lib/alias";
+import { logActivity } from "@/lib/activity";
+import { findDataProblems } from "@/lib/data-problems";
+import { FINANCIAL_FIELDS, financialEditError, isFinancialField, nextEditedFields, valuesDiffer } from "@/lib/field-edits";
 import { presentDeal } from "@/lib/present";
 import { CANONICAL_STATUS, stageFromMondayStatus } from "@/lib/status-map";
 
@@ -40,8 +43,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     orderBy: { updatedAt: "desc" },
   });
   const presented = presentDeal(deal);
+  const allDeals = await prisma.deal.findMany({ include: { contact: true } });
+  const problems = findDataProblems(allDeals).filter((problem) => problem.dealId === deal.id);
   return NextResponse.json({
     ...presented,
+    problems,
     relatedDeals: siblings.map((sibling) => {
       const shown = presentDeal(sibling);
       return {
@@ -81,6 +87,13 @@ const updateDealSchema = z.object({
   consultInvoiceNumber: z.string().nullable().optional(),
   consultInvoiceLink: z.string().nullable().optional(),
   worksheetNotes: z.string().nullable().optional(),
+  projectNotes: z.string().nullable().optional(),
+  driveFolderUrl: z.string().nullable().optional(),
+  worksheetUrl: z.string().nullable().optional(),
+  proposalUrl: z.string().nullable().optional(),
+  contractUrl: z.string().nullable().optional(),
+  invoicePdfUrl: z.string().nullable().optional(),
+  shannonApproval: z.string().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -94,8 +107,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { consultDate, projectStartDate, dateClosed, stage: requestedStage, subStatus: requestedSubStatus, ...rest } =
-    parsed.data;
+  const {
+    consultDate,
+    projectStartDate,
+    dateClosed,
+    stage: requestedStage,
+    subStatus: requestedSubStatus,
+    shannonApproval,
+    ...rest
+  } = parsed.data;
 
   const textKeys = [
     "title",
@@ -106,6 +126,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     "consultInvoiceNumber",
     "consultInvoiceLink",
     "worksheetNotes",
+    "projectNotes",
+    "driveFolderUrl",
+    "worksheetUrl",
+    "proposalUrl",
+    "contractUrl",
+    "invoicePdfUrl",
   ] as const;
 
   const existing = await prisma.deal.findUnique({ where: { id } });
@@ -128,6 +154,42 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (current !== stage) subStatus = CANONICAL_STATUS[stage];
   }
 
+  const financialChanging = FINANCIAL_FIELDS.some(
+    (field) => rest[field] !== undefined && valuesDiffer(field, existing[field], rest[field]),
+  );
+  const blocked = financialEditError({ role: session.role, approval: shannonApproval, changing: financialChanging });
+  if (blocked) return NextResponse.json({ error: blocked.error }, { status: blocked.status });
+
+  const changes: { field: string; value: unknown; previous: unknown }[] = [];
+  for (const [field, value] of Object.entries(rest)) {
+    if (value === undefined) continue;
+    if (valuesDiffer(field, existing[field as keyof typeof existing], value)) {
+      changes.push({ field, value, previous: existing[field as keyof typeof existing] });
+    }
+  }
+  if (stage && stage !== existing.stage) changes.push({ field: "stage", value: stage, previous: existing.stage });
+  if (subStatus !== undefined && valuesDiffer("subStatus", existing.subStatus, subStatus)) {
+    changes.push({ field: "subStatus", value: subStatus, previous: existing.subStatus });
+  }
+  const dateChanges = [
+    ["consultDate", consultDate],
+    ["projectStartDate", projectStartDate],
+    ["dateClosed", dateClosed],
+  ] as const;
+  for (const [field, value] of dateChanges) {
+    if (value === undefined) continue;
+    const parsedDate = value ? parseDateInput(value) : null;
+    if (valuesDiffer(field, existing[field], parsedDate)) changes.push({ field, value: parsedDate, previous: existing[field] });
+  }
+  const imported = existing.importedValues && typeof existing.importedValues === "object" && !Array.isArray(existing.importedValues)
+    ? (existing.importedValues as Record<string, unknown>)
+    : null;
+  const editedFields = nextEditedFields(
+    existing.editedFields,
+    imported,
+    changes.map((change) => ({ field: change.field, value: change.value })),
+  );
+
   // Closing a deal without an explicit dateClosed stamps it now, so
   // reporting on "when did this close" doesn't silently go blank.
   const stageChangingToClosed = stage === "CLOSED" && existing.stage !== "CLOSED";
@@ -149,9 +211,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           : stageChangingToClosed
             ? new Date()
             : undefined,
+      editedFields,
     },
     include: { contact: true, assignedTo: { select: { id: true, name: true } } },
   });
+
+  for (const change of changes) {
+    await logActivity(prisma, {
+      userId: session.userId,
+      action: change.field === "stage" ? "stage" : isFinancialField(change.field) ? "financial" : "edit",
+      recordType: "deal",
+      recordId: deal.id,
+      field: change.field,
+      oldValue: change.previous,
+      newValue: change.value,
+    });
+  }
 
   return NextResponse.json(presentDeal(deal));
 }

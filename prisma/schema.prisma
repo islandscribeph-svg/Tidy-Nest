@@ -76,6 +76,24 @@ model User {
   notes               Note[]
   passwordResetTokens PasswordResetToken[]
   savedFilters        SavedFilter[]
+  activityEvents      ActivityEvent[]
+}
+
+model ActivityEvent {
+  id         String   @id @default(cuid())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  action     String
+  recordType String?
+  recordId   String?
+  field      String?
+  oldValue   String?  @db.Text
+  newValue   String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([recordType, recordId])
 }
 
 model SavedFilter {
@@ -117,6 +135,9 @@ model Contact {
   company       String?
   notes         String?
   cityState     String?
+  driveFolderUrl String?
+  importedValues Json?
+  editedFields   String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -196,6 +217,9 @@ model Deal {
 
   assignedTo   User?   @relation("DealAssignee", fields: [assignedToId], references: [id])
   assignedToId String?
+
+  importedValues Json?
+  editedFields   String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

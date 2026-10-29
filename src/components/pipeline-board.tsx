@@ -26,11 +26,13 @@ export function PipelineBoard({
   initialDeals,
   users,
   employees,
+  isAdmin = false,
   initialDealId = null,
 }: {
   initialDeals: DealSummary[];
   users: { id: string; name: string }[];
   employees: { id: string; name: string; active: boolean }[];
+  isAdmin?: boolean;
   initialDealId?: string | null;
 }) {
   const [deals, setDeals] = useState<DealSummary[]>(initialDeals);
@@ -177,6 +179,7 @@ export function PipelineBoard({
           dealId={selectedDealId}
           users={users}
           employees={employees}
+          isAdmin={isAdmin}
           onClose={() => setSelectedDealId(null)}
           onSaved={handleDealSaved}
         />

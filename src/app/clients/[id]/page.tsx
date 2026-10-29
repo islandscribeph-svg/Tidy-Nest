@@ -5,7 +5,9 @@ import type { Stage } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildClientReport, type ReportLine } from "@/lib/client-report";
 import { findDataProblems } from "@/lib/data-problems";
+import { ContactEditor } from "@/components/contact-editor";
 import { ExportLinks } from "@/components/export-links";
+import { presentContact } from "@/lib/present";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
@@ -103,6 +105,7 @@ export default async function ClientReportPage({ params }: { params: Promise<{ i
     .map((problem) => problem.dealId)
     .filter((dealId) => ownIds.has(dealId));
   const report = buildClientReport({ contact, deals: contact.deals, problemDealIds });
+  const shownContact = presentContact(contact);
 
   return (
     <div className="p-6">
@@ -115,11 +118,29 @@ export default async function ClientReportPage({ params }: { params: Promise<{ i
           </p>
           <h1 className="text-lg font-semibold text-neutral-900">{report.name}</h1>
           <p className="mt-1 max-w-3xl text-sm text-neutral-500">
-            Read-only. This page does not change Monday or the records in this app. Dates are Eastern Time.
+            Project totals are calculated here and are not written back. Contact edits stay in this app. Monday is not changed. Dates are Eastern Time.
           </p>
         </div>
         <ExportLinks href={`/api/exports/client?id=${id}`} label="Download" />
       </div>
+
+      <ContactEditor
+        contact={{
+          id: contact.id,
+          firstName: shownContact.firstName,
+          lastName: shownContact.lastName,
+          email: shownContact.email,
+          phone: shownContact.phone,
+          streetAddress: shownContact.streetAddress,
+          city: shownContact.city,
+          state: shownContact.state,
+          company: shownContact.company,
+          notes: shownContact.notes,
+          driveFolderUrl: shownContact.driveFolderUrl,
+          editedFields: shownContact.editedFields,
+          importedValues: (shownContact.importedValues ?? null) as Record<string, string | number | null> | null,
+        }}
+      />
 
       <dl className="mb-4 grid gap-2 text-sm sm:grid-cols-2">
         <div>

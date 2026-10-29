@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { presentClientJson, presentDeal } from "@/lib/present";
 import { PipelineBoard } from "@/components/pipeline-board";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PipelinePage({ searchParams }: { searchParams: Promise<{ deal?: string }> }) {
   const { deal: selectedDeal } = await searchParams;
+  const currentUser = await getCurrentUser().catch(() => null);
   const [deals, users, employees] = await Promise.all([
     prisma.deal.findMany({
       include: { contact: true, assignedTo: { select: { id: true, name: true } } },
@@ -29,6 +31,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
         initialDealId={selectedDeal ?? null}
         users={presentClientJson(users)}
         employees={presentClientJson(employees)}
+        isAdmin={currentUser?.role === "ADMIN"}
       />
     </div>
   );
