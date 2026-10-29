@@ -320,7 +320,11 @@ export function DealDrawer({
                     )}
                     <div className="flex flex-wrap gap-x-4 gap-y-1">
                       <ExternalLink href={deal.worksheetUrl}>Worksheet{deal.worksheetFileName ? `: ${deal.worksheetFileName}` : ""}</ExternalLink>
-                      <ExternalLink href={deal.driveFolderUrl}>Client Drive folder</ExternalLink>
+                      {deal.driveFolderUrl ? (
+                        <a href={deal.driveFolderUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center text-sm text-blue-800 underline">
+                          Open Drive folder
+                        </a>
+                      ) : null}
                       <ExternalLink href={deal.invoicePdfUrl}>
                         Invoice PDF{deal.invoiceFileName ? `: ${deal.invoiceFileName}` : ""}
                       </ExternalLink>

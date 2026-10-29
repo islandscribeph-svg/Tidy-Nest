@@ -8,6 +8,9 @@ import { logActivity } from "@/lib/activity";
 import { findDataProblems } from "@/lib/data-problems";
 import { FINANCIAL_FIELDS, financialEditError, isFinancialField, nextEditedFields, valuesDiffer } from "@/lib/field-edits";
 import { presentDeal } from "@/lib/present";
+import { DRIVE_URL_ERROR, isGoogleDriveUrl } from "@/lib/drive-url";
+import { notifySlack } from "@/lib/slack";
+import { slackStageMessage } from "@/lib/slack-message";
 import { CANONICAL_STATUS, stageFromMondayStatus } from "@/lib/status-map";
 
 type Params = { params: Promise<{ id: string }> };
@@ -159,6 +162,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   );
   const blocked = financialEditError({ role: session.role, approval: shannonApproval, changing: financialChanging });
   if (blocked) return NextResponse.json({ error: blocked.error }, { status: blocked.status });
+  if (rest.driveFolderUrl && !isGoogleDriveUrl(rest.driveFolderUrl)) {
+    return NextResponse.json({ error: DRIVE_URL_ERROR }, { status: 400 });
+  }
 
   const changes: { field: string; value: unknown; previous: unknown }[] = [];
   for (const [field, value] of Object.entries(rest)) {
@@ -215,6 +221,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
     include: { contact: true, assignedTo: { select: { id: true, name: true } } },
   });
+
+  if (changes.some((change) => change.field === "stage")) {
+    await notifySlack("stage", slackStageMessage(deal, "stage")).catch(() => undefined);
+  }
 
   for (const change of changes) {
     await logActivity(prisma, {

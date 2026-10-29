@@ -189,3 +189,15 @@ curl -X POST https://<your-deploy>.vercel.app/api/setup/reimport \
 **This is destructive and not undoable** — anything entered directly in the live app since the last import (stage moves, notes, worksheet/reimbursement line items, saved contacts) that isn't reflected in the spreadsheet is gone once this runs. Only use it when the spreadsheet should fully replace what's live, not to pull in a few new leads on top of existing work.
 
 Local dev can use `npm run sandbox:setup`, `npm run db:seed`, or `npm run import:monday` directly. The `/api/setup/*` routes exist so a fresh deploy can be bootstrapped without a shell on the database host. There is no Monday credential to configure.
+
+## Settings and integrations
+
+Every integration is off until the flag is `1` and the secrets below are set in the environment. Settings shows “Not configured” until then. Secrets are not stored in the database or the repo.
+
+| Integration | What works with no credentials | Env vars to turn it on |
+| --- | --- | --- |
+| Google Sheets backup | Nothing is written. Settings shows the last run once a backup has succeeded. | `GOOGLE_SHEETS_BACKUP_ENABLED=1`, `GOOGLE_SHEETS_BACKUP_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`. Cron: `POST /api/integrations/backup` with header `x-backup-key: $BACKUP_CRON_SECRET`. The sheet needs tabs named Deals, Projects, Contacts, Data problems, Partners, and Activity, shared with the service account. |
+| Slack | No messages are sent. Toggles can be saved. | `SLACK_NOTIFICATIONS_ENABLED=1` and `SLACK_WEBHOOK_URL` (incoming webhook). |
+| Calendar | `/calendar` and a private iCal feed (`/api/calendar/feed?token=…`, created and revoked in Settings) work with no Google account. | Two-way Google Calendar sync is not built. `GOOGLE_CALENDAR_SYNC_ENABLED`, `GOOGLE_CALENDAR_ID`, and the same service account would be required before that can be added. |
+| Drive | Staff can paste and open a Drive or Docs URL on a client or project. Settings can copy existing project links onto clients. Missing links stay on the data-problems list. | No Drive API. Auto-creating folders would need a Drive scope on the service account and a parent folder id. That is not built. |
+| Alias | `CLIENT_ALIAS_MAP` JSON, for example `{"Harborlane":"Market Street"}`. A real surname belongs only in that env value. |

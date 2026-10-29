@@ -84,6 +84,11 @@ export function ContactEditor({ contact }: { contact: ContactFields }) {
         <label className="text-sm sm:col-span-2">
           Drive folder
           <input className="input mt-1 min-h-10" value={form.driveFolderUrl} onChange={(event) => set("driveFolderUrl", event.target.value)} />
+          {form.driveFolderUrl && (
+            <a className="mt-1 inline-flex min-h-10 items-center underline" href={form.driveFolderUrl} target="_blank" rel="noreferrer">
+              Open Drive folder
+            </a>
+          )}
         </label>
         <label className="text-sm sm:col-span-2">
           Notes

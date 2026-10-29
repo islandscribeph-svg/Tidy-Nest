@@ -6,8 +6,11 @@ export const SECRET_GATED_API_PREFIXES = ["/api/leads/intake", "/api/setup"];
 
 export const PUBLIC_AUTH_API = ["/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password"];
 
+// The iCal feed authenticates with the token query, not a session cookie.
+export const TOKEN_GATED_API_PREFIXES = ["/api/calendar/feed"];
+
 export function isSessionOptionalPath(pathname: string): boolean {
-  return [...PUBLIC_PAGE_PREFIXES, ...SECRET_GATED_API_PREFIXES, ...PUBLIC_AUTH_API].some(
+  return [...PUBLIC_PAGE_PREFIXES, ...SECRET_GATED_API_PREFIXES, ...PUBLIC_AUTH_API, ...TOKEN_GATED_API_PREFIXES].some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
   );
 }

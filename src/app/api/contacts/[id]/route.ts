@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { isMaskedEmail, preserveStoredText } from "@/lib/alias";
 import { logActivity } from "@/lib/activity";
 import { nextEditedFields, valuesDiffer } from "@/lib/field-edits";
+import { DRIVE_URL_ERROR, isGoogleDriveUrl } from "@/lib/drive-url";
 import { presentContact } from "@/lib/present";
 import { prisma } from "@/lib/prisma";
 
@@ -35,6 +36,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const existing = await prisma.contact.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (parsed.data.driveFolderUrl && !isGoogleDriveUrl(parsed.data.driveFolderUrl)) {
+    return NextResponse.json({ error: DRIVE_URL_ERROR }, { status: 400 });
+  }
 
   const data = { ...parsed.data };
   const textKeys = ["firstName", "lastName", "email", "phone", "streetAddress", "city", "state", "company", "notes", "driveFolderUrl"] as const;

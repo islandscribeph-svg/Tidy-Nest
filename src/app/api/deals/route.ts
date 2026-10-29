@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { presentDeal } from "@/lib/present";
+import { notifySlack } from "@/lib/slack";
+import { slackStageMessage } from "@/lib/slack-message";
 
 export async function GET() {
   const session = await getSession();
@@ -67,5 +69,6 @@ export async function POST(req: NextRequest) {
     include: { contact: true },
   });
 
+  await notifySlack("lead", slackStageMessage(deal, "lead")).catch(() => undefined);
   return NextResponse.json(presentDeal(deal), { status: 201 });
 }

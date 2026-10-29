@@ -81,6 +81,7 @@ model User {
   email        String   @unique
   passwordHash String
   role         Role     @default(STAFF)
+  calendarToken String?  @unique
   createdAt    DateTime @default(now())
 
   assignedDeals       Deal[]               @relation("DealAssignee")
@@ -139,6 +140,12 @@ model PartnerLink {
   contactId String?
 
   @@index([partnerId])
+}
+
+model IntegrationSetting {
+  id              String  @id @default("app")
+  slackNotifyLead Boolean @default(true)
+  slackNotifyStage Boolean @default(true)
 }
 
 model SavedFilter {
