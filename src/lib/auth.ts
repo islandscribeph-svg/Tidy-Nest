@@ -1,6 +1,8 @@
+import type { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const COOKIE_NAME = "tidynest_session";
@@ -24,8 +26,12 @@ export async function verifyPassword(password: string, hash: string) {
 
 export type SessionPayload = {
   userId: string;
-  role: "ADMIN" | "STAFF";
+  role: Role;
 };
+
+function isRole(value: unknown): value is Role {
+  return value === "ADMIN" || value === "STAFF" || value === "MEMBER";
+}
 
 export async function createSessionToken(payload: SessionPayload) {
   return new SignJWT(payload)
@@ -38,21 +44,31 @@ export async function createSessionToken(payload: SessionPayload) {
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return payload as unknown as SessionPayload;
+    if (typeof payload.userId !== "string" || !isRole(payload.role)) return null;
+    return { userId: payload.userId, role: payload.role };
   } catch {
     return null;
   }
 }
 
-export async function setSessionCookie(token: string) {
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+export function sessionCookieOptions() {
+  return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: SESSION_DURATION_SECONDS,
-  });
+  };
+}
+
+export function applySessionCookie(res: NextResponse, token: string) {
+  res.cookies.set(COOKIE_NAME, token, sessionCookieOptions());
+  return res;
+}
+
+export async function setSessionCookie(token: string) {
+  const store = await cookies();
+  store.set(COOKIE_NAME, token, sessionCookieOptions());
 }
 
 export async function clearSessionCookie() {
@@ -64,7 +80,15 @@ export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+  const payload = await verifySessionToken(token);
+  if (!payload) return null;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
+    if (!user) return null;
+    return { userId: payload.userId, role: user.role };
+  } catch {
+    return payload;
+  }
 }
 
 export async function getCurrentUser() {

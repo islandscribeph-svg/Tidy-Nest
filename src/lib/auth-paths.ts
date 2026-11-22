@@ -4,7 +4,12 @@ export const PUBLIC_PAGE_PREFIXES = ["/login", "/forgot-password", "/reset-passw
 // Session cookie is not required. Each route rejects a missing or wrong secret.
 export const SECRET_GATED_API_PREFIXES = ["/api/leads/intake", "/api/setup"];
 
-export const PUBLIC_AUTH_API = ["/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password"];
+export const PUBLIC_AUTH_API = [
+  "/api/auth/login",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/google",
+];
 
 // The iCal feed authenticates with the token query, not a session cookie.
 export const TOKEN_GATED_API_PREFIXES = ["/api/calendar/feed"];

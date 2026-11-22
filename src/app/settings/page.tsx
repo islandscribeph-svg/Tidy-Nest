@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.role !== "ADMIN") redirect("/pipeline");
+  if (session.role !== "ADMIN") redirect("/today");
 
   const [deals, contacts, run, backup, slackSettings] = await Promise.all([
     prisma.deal.count(),

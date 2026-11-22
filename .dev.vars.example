@@ -1,0 +1,15 @@
+# Copy to .dev.vars for `wrangler dev`. Do not commit .dev.vars.
+# Hyperdrive local Postgres is set in wrangler.jsonc as localConnectionString.
+SESSION_SECRET="change-me-to-a-random-string"
+LEAD_INTAKE_SECRET="change-me-to-a-random-string"
+ALLOWED_USER_EMAILS="peps@tidynest.com,shannon@tidynest.com"
+CLIENT_ALIAS_MAP={"Harborlane":"Market Street"}
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+BACKUP_CRON_SECRET=""
+GOOGLE_SERVICE_ACCOUNT_EMAIL=""
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=""
+GOOGLE_SHEETS_BACKUP_ID=""
+SLACK_WEBHOOK_URL=""
+RESEND_API_KEY=""
+EMAIL_FROM="Tidy Nest <onboarding@resend.dev>"

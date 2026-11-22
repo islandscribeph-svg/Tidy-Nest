@@ -4,6 +4,11 @@ export type IntegrationStatus = {
   detail: string;
 };
 
+// The Cloudflare cron handler runs the backup only when this flag is exactly "1".
+export function sheetsCronEnabled(flag: string | undefined): boolean {
+  return flag === "1";
+}
+
 export function sheetsBackupStatus(): IntegrationStatus {
   const configured = Boolean(
     process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
