@@ -20,7 +20,7 @@ import type { DealSummary } from "@/lib/types";
 import { DealCard } from "@/components/deal-card";
 import { ExportLinks } from "@/components/export-links";
 import { DealDrawer } from "@/components/deal-drawer";
-import { NewLeadModal } from "@/components/new-lead-modal";
+import { ViewsMenu } from "@/components/views-menu";
 
 export function PipelineBoard({
   initialDeals,
@@ -38,7 +38,6 @@ export function PipelineBoard({
   const [deals, setDeals] = useState<DealSummary[]>(initialDeals);
   const [activeDeal, setActiveDeal] = useState<DealSummary | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(initialDealId);
-  const [showNewLead, setShowNewLead] = useState(false);
   const [query, setQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
@@ -103,42 +102,43 @@ export function PipelineBoard({
     setDeals((ds) => ds.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
   }
 
-  function handleNewLead(deal: DealSummary) {
-    setDeals((ds) => [deal, ...ds]);
-    setShowNewLead(false);
+  const filterQuery = { q: query, stage: stageFilter, year: yearFilter };
+  function applyFilter(next: { q?: string; stage?: string; year?: string }) {
+    setQuery(next.q ?? "");
+    setStageFilter(next.stage || "all");
+    setYearFilter(next.year || "all");
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-col gap-3 border-b border-[#e4dfd2] bg-white px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
+      <div className="hidden border-b border-[#e4dfd2] bg-white px-6 py-3 md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-[#1c2116]">Pipeline</h1>
-          <p className="text-xs text-neutral-500">Drag a project on a large screen. On a phone, pick a stage, then move it with the list.</p>
+          <p className="text-xs text-neutral-500">Drag a project between stages. On a phone, pick a stage, then move it with the list.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SavedFilterBar
-            page="pipeline"
-            query={{ q: query, stage: stageFilter, year: yearFilter }}
-            onApply={(next) => {
-              setQuery(next.q ?? "");
-              setStageFilter(next.stage || "all");
-              setYearFilter(next.year || "all");
-            }}
-          />
+          <SavedFilterBar page="pipeline" query={filterQuery} onApply={applyFilter} />
           <ExportLinks href="/api/exports/pipeline" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search projects"
-            className="min-h-11 w-full rounded-xl border border-neutral-300 px-3 text-sm md:w-48"
+            className="min-h-11 w-48 rounded-xl border border-neutral-300 px-3 text-sm"
           />
-        <button
-          onClick={() => setShowNewLead(true)}
-          className="min-h-11 rounded-xl bg-[#1c2116] px-3 text-sm font-medium text-white"
-        >
-          New lead
-        </button>
         </div>
+      </div>
+      <div className="flex items-center gap-2 border-b border-[#e4dfd2] bg-white px-3 py-2 md:hidden">
+        <h1 className="sr-only">Pipeline</h1>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search projects"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-neutral-300 px-3 text-sm"
+        />
+        <ViewsMenu>
+          <SavedFilterBar page="pipeline" query={filterQuery} onApply={applyFilter} />
+          <ExportLinks href="/api/exports/pipeline" />
+        </ViewsMenu>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col md:hidden">
@@ -256,7 +256,6 @@ export function PipelineBoard({
           onSaved={handleDealSaved}
         />
       )}
-      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} onCreated={handleNewLead} />}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportLinks } from "@/components/export-links";
 import { SavedFilterBar } from "@/components/saved-filter-bar";
+import { ViewsMenu } from "@/components/views-menu";
 import { textMatch } from "@/lib/filter-presets";
 import { SHANNON_APPROVAL } from "@/lib/field-edits";
 import { attentionHelp, attentionTitle } from "@/lib/needs-attention";
@@ -74,8 +75,8 @@ export function NeedsAttentionView({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-5">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="mx-auto w-full max-w-3xl px-4 py-4 md:py-5">
+      <div className="mb-3 hidden items-start justify-between gap-3 md:flex">
         <div>
           <h1 className="text-2xl font-semibold text-[#1c2116]">Needs attention</h1>
           <p className="mt-1 max-w-xl text-sm text-neutral-600">
@@ -84,10 +85,11 @@ export function NeedsAttentionView({
         </div>
         <ExportLinks href="/api/exports/data-problems" />
       </div>
+      <h1 className="mb-2 text-xl font-semibold text-[#1c2116] md:hidden">Needs attention</h1>
       {error && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 hidden flex-wrap items-center gap-2 md:flex">
         <input
-          className="min-h-11 w-full rounded-xl border border-[#e4dfd2] bg-white px-3 text-sm sm:max-w-sm"
+          className="min-h-11 w-full max-w-sm rounded-xl border border-[#e4dfd2] bg-white px-3 text-sm"
           placeholder="Search this list"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -100,6 +102,25 @@ export function NeedsAttentionView({
             setQuery(next.q ?? "");
           }}
         />
+      </div>
+      <div className="mb-3 flex items-center gap-2 md:hidden">
+        <input
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#e4dfd2] bg-white px-3 text-sm"
+          placeholder="Search this list"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <ViewsMenu>
+          <SavedFilterBar
+            page="data-problems"
+            query={{ type, q: query }}
+            onApply={(next) => {
+              setType(next.type || "all");
+              setQuery(next.q ?? "");
+            }}
+          />
+          <ExportLinks href="/api/exports/data-problems" />
+        </ViewsMenu>
       </div>
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map((filter) => {
