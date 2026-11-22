@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportLinks } from "@/components/export-links";
+import { ViewsMenu } from "@/components/views-menu";
 import { textMatch } from "@/lib/filter-presets";
 
 export type PartnerRow = {
@@ -62,12 +63,18 @@ export function PartnersBrowser({ partners }: { partners: PartnerRow[] }) {
 
   return (
     <div className="p-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-4 hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Partners</h1>
           <p className="mt-1 text-sm text-neutral-500">Vendors, suppliers, and partners. This list starts empty.</p>
         </div>
         <ExportLinks href="/api/exports/partners" />
+      </div>
+      <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
+        <h1 className="text-lg font-semibold text-neutral-900">Partners</h1>
+        <ViewsMenu>
+          <ExportLinks href="/api/exports/partners" />
+        </ViewsMenu>
       </div>
       <form onSubmit={add} className="mb-4 flex flex-wrap items-center gap-2">
         <input className="input min-h-10 w-56" placeholder="New name" value={name} onChange={(event) => setName(event.target.value)} required />

@@ -8,6 +8,7 @@ const alias = [{ match: "Harborlane", display: "Market Street" }];
 describe("financial edits and imported values", () => {
   it("requires an admin and Shannon's approval", () => {
     assert.equal(financialEditError({ role: "STAFF", approval: SHANNON_APPROVAL, changing: true })?.status, 403);
+    assert.equal(financialEditError({ role: "MEMBER", approval: SHANNON_APPROVAL, changing: true })?.status, 403);
     assert.match(financialEditError({ role: "ADMIN", approval: "ok", changing: true })?.error ?? "", /Shannon/);
     assert.equal(financialEditError({ role: "ADMIN", approval: SHANNON_APPROVAL, changing: true }), null);
     assert.equal(financialEditError({ role: "STAFF", approval: "", changing: false }), null);

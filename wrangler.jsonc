@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tidy-nest",
+  "main": "cloudflare/worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tidy-nest"
+    }
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:5432/tidynest"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 11 * * *"]
+  },
+  "vars": {
+    "APP_ORIGIN": "http://localhost:8787",
+    "PASSWORD_LOGIN_ENABLED": "1",
+    "GOOGLE_SHEETS_BACKUP_ENABLED": "",
+    "SLACK_NOTIFICATIONS_ENABLED": ""
+  }
+}

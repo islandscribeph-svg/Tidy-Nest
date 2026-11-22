@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isGoogleDriveUrl } from "@/lib/drive-url";
 import { dealsToIcal } from "@/lib/ical";
-import { sheetsBackupStatus, slackStatus } from "@/lib/integrations";
+import { sheetsBackupStatus, sheetsCronEnabled, slackStatus } from "@/lib/integrations";
 import { slackStageMessage } from "@/lib/slack-message";
 
 const alias = [{ match: "Harborlane", display: "Market Street" }];
@@ -36,5 +36,8 @@ describe("integrations stay off and aliased", () => {
     delete process.env.SLACK_NOTIFICATIONS_ENABLED;
     assert.equal(sheetsBackupStatus().enabled, false);
     assert.equal(slackStatus().enabled, false);
+    assert.equal(sheetsCronEnabled(undefined), false);
+    assert.equal(sheetsCronEnabled("1"), true);
+    assert.equal(sheetsCronEnabled("true"), false);
   });
 });

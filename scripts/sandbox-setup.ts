@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/lib/auth";
+import { createPrismaClient } from "../src/lib/prisma";
 import { importSnapshotFile } from "../src/lib/monday/import-snapshot";
 import { parseAllowlist } from "../src/lib/staff-users";
 import { loadEnvFile } from "./load-env";
@@ -69,9 +69,13 @@ if (migrate.status !== 0) {
   process.exit(migrate.status ?? 1);
 }
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient(process.env.DATABASE_URL ?? "");
 
 async function keepOnlyStaffAccounts() {
+  if (process.env.SANDBOX_PRUNE_USERS !== "1") {
+    console.log("Other accounts were left in place. Set SANDBOX_PRUNE_USERS=1 to remove them.");
+    return;
+  }
   const emails = users.map((user) => user.email);
   const extras = await prisma.user.findMany({
     where: { NOT: { email: { in: emails } } },

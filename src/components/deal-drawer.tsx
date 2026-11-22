@@ -116,8 +116,9 @@ export function DealDrawer({
   ];
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" role="dialog" aria-modal="true" aria-label="Project">
+      <button type="button" className="hidden min-w-0 flex-1 md:block" aria-label="Close project" onClick={onClose} />
+      <div className="flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
           <h2 className="text-sm font-semibold text-neutral-900">{deal?.displayName || "Project details"}</h2>
           <button onClick={onClose} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100">
@@ -190,7 +191,7 @@ export function DealDrawer({
                     <ul className="space-y-1 text-xs text-amber-800">
                       {deal.problems.map((problem) => (
                         <li key={problem.id}>
-                          <Link href="/data-problems" prefetch={false} className="underline">
+                          <Link href="/needs-attention" prefetch={false} className="underline">
                             {problem.detail}
                           </Link>
                         </li>

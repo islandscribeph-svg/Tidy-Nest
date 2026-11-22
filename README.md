@@ -133,7 +133,7 @@ These stay manual. The schema already has fields for them:
 
 ## Deploying
 
-Deploy to Vercel and set `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) to your Supabase (or other) Postgres instance, plus `SESSION_SECRET` and `LEAD_INTAKE_SECRET`. The build (`npm run build`) runs `prisma migrate deploy` before `next build`, so every deploy automatically applies any pending schema migrations — nothing extra to run for that part.
+Version 2 deploys to Cloudflare Workers. Postgres stays the database, reached through Hyperdrive. See [DEPLOY.md](DEPLOY.md) for the one-command deploy, the data copy script, Google sign-in, and the secrets Peps needs to set. `npm run build` no longer migrates. `npm run deploy` runs `prisma migrate deploy` and then the Worker deploy.
 
 ### First-time bootstrap on a fresh deploy
 

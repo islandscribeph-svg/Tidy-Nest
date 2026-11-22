@@ -1,83 +1,12 @@
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { LoginForm } from "@/components/login-form";
 import { brandColor, brandLogoPath } from "@/lib/brand";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Login failed");
-      return;
-    }
-    router.push("/dashboard");
-    router.refresh();
-  }
-
+  const passwordEnabled = process.env.PASSWORD_LOGIN_ENABLED !== "0";
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-        <div className="flex justify-center px-8 py-5" style={{ backgroundColor: brandColor() }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={brandLogoPath()} alt="Tidy Nest" className="h-8 w-auto" />
-        </div>
-        <div className="p-8">
-        <h1 className="sr-only">Tidy Nest</h1>
-        <p className="mb-6 text-sm text-neutral-500">Staff sign-in. There is no public registration.</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="block text-sm font-medium text-neutral-700">Password</label>
-              <Link href="/forgot-password" className="text-xs text-neutral-500 hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
-            />
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-        </div>
-      </div>
-    </div>
+    <Suspense fallback={<div className="min-h-screen bg-[#f4f1ea]" />}>
+      <LoginForm passwordEnabled={passwordEnabled} logoPath={brandLogoPath()} brandColor={brandColor()} />
+    </Suspense>
   );
 }

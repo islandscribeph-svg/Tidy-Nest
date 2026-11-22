@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
 
+  if (process.env.PASSWORD_LOGIN_ENABLED === "0") {
+    return NextResponse.json({ error: "Password sign-in is turned off. Use Google." }, { status: 403 });
+  }
+
   const email = parsed.data.email.toLowerCase();
   const { password } = parsed.data;
   if (staffAccessError(email)) {

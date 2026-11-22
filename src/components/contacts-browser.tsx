@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ExportLinks } from "@/components/export-links";
 import { SavedFilterBar } from "@/components/saved-filter-bar";
+import { ViewsMenu } from "@/components/views-menu";
 import { textMatch } from "@/lib/filter-presets";
 
 export type ContactRow = {
@@ -38,12 +39,12 @@ export function ContactsBrowser({ contacts }: { contacts: ContactRow[] }) {
   const page = visible.slice(0, shown);
 
   return (
-    <div className="p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="px-4 py-4 md:p-6">
+      <div className="mb-4 hidden flex-wrap items-center justify-between gap-3 md:flex">
         <h1 className="text-lg font-semibold text-neutral-900">Contacts</h1>
         <ExportLinks href="/api/exports/contacts" />
       </div>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 hidden flex-wrap items-center gap-2 md:flex">
         <input
           className="input min-h-10 w-full max-w-sm"
           placeholder="Search contacts"
@@ -61,6 +62,29 @@ export function ContactsBrowser({ contacts }: { contacts: ContactRow[] }) {
             setShown(PAGE_SIZE);
           }}
         />
+      </div>
+      <div className="mb-3 flex items-center gap-2 md:hidden">
+        <h1 className="sr-only">Contacts</h1>
+        <input
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-neutral-300 px-3 text-sm"
+          placeholder="Search contacts"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setShown(PAGE_SIZE);
+          }}
+        />
+        <ViewsMenu>
+          <SavedFilterBar
+            page="contacts"
+            query={{ q: query }}
+            onApply={(next) => {
+              setQuery(next.q ?? "");
+              setShown(PAGE_SIZE);
+            }}
+          />
+          <ExportLinks href="/api/exports/contacts" />
+        </ViewsMenu>
       </div>
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <table className="w-full min-w-[720px] text-left text-sm">

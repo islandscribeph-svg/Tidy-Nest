@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import { importSnapshotFile } from "../src/lib/monday/import-snapshot";
+import { createPrismaClient } from "../src/lib/prisma";
 import { loadEnvFile } from "./load-env";
 
 loadEnvFile();
@@ -12,7 +12,7 @@ if (!file) {
 }
 
 const explicitPath = Boolean(process.argv[2]);
-const prisma = new PrismaClient();
+const prisma = createPrismaClient(process.env.DATABASE_URL ?? "");
 
 importSnapshotFile(prisma, file, {
   allowSampleFixture: explicitPath || process.env.SANDBOX_ALLOW_FIXTURE === "1",

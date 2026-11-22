@@ -1,18 +1,21 @@
 // Tidy Nest CRM/PM — Prisma schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  // JS query compiler. Works in Node and in a Cloudflare Worker (no native binary).
+  engineType = "client"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL") // pooled connection (Supabase transaction pooler, port 6543) — used at runtime
-  directUrl = env("DIRECT_URL")   // direct connection (port 5432) — used by `prisma migrate` only, since DDL doesn't work reliably through a transaction pooler
+  url       = env("DATABASE_URL") // runtime. On Cloudflare this is the Hyperdrive connection string.
+  directUrl = env("DIRECT_URL")   // direct connection used by `prisma migrate` only
 }
 
 enum Role {
   ADMIN
   STAFF
+  MEMBER
 }
 
 // Pipeline stage. NEW_LEAD..CLOSED is the "happy path"; UNQUALIFIED and DEAD
@@ -80,7 +83,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         Role     @default(STAFF)
+  role         Role     @default(MEMBER)
   calendarToken String?  @unique
   createdAt    DateTime @default(now())
 

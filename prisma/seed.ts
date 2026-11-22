@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/lib/auth";
+import { createPrismaClient } from "../src/lib/prisma";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient(process.env.DATABASE_URL ?? "");
 
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL;

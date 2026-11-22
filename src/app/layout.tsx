@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
-import { NavBar } from "@/components/nav-bar";
+import { AppShell } from "@/components/app-shell";
+import { DevBadgeOffset } from "@/components/dev-badge-offset";
 import { getCurrentUser } from "@/lib/auth";
 import { brandColor, brandLogoPath } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -32,19 +33,20 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col bg-neutral-50 text-neutral-900">
-        {user && asOf && (
-          <NavBar
+      <body className="min-h-full bg-[#f4f1ea] text-[#1c2116]">
+        <DevBadgeOffset />
+        {user && asOf ? (
+          <AppShell
             userName={user.name}
             role={user.role}
             brandColor={brandColor()}
             logoPath={brandLogoPath()}
             snapshotLabel={asOf}
-          />
-        )}
-        <main className="min-h-0 flex-1">{children}</main>
-        {user && asOf && (
-          <footer className="border-t border-neutral-200 bg-white px-6 py-2 text-xs text-neutral-500">{asOf}</footer>
+          >
+            {children}
+          </AppShell>
+        ) : (
+          children
         )}
       </body>
     </html>

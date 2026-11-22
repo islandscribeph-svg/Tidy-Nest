@@ -7,8 +7,8 @@
 // --dry-run parses the file and prints the stage/source breakdown it would
 // produce, without touching the database. Use it to sanity-check the
 // mapping against the source file before running for real.
-import { PrismaClient } from "@prisma/client";
 import { parseMondayWorkbook, summarizeMondayRecords, importMondayRecords } from "../src/lib/monday-import";
+import { createPrismaClient } from "../src/lib/prisma";
 
 async function run() {
   const path = process.argv[2];
@@ -32,7 +32,7 @@ async function run() {
     return;
   }
 
-  const prisma = new PrismaClient();
+  const prisma = createPrismaClient(process.env.DATABASE_URL ?? "");
   const result = await importMondayRecords(prisma, records);
   console.log(`\nImported ${result.dealsCreated} deals across ${result.contactsUsed} contacts.`);
   await prisma.$disconnect();

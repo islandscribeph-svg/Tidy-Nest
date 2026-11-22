@@ -75,6 +75,8 @@ describe("auth paths", () => {
   it("keeps app and API routes behind a session", () => {
     assert.equal(isSessionOptionalPath("/login"), true);
     assert.equal(isSessionOptionalPath("/api/auth/login"), true);
+    assert.equal(isSessionOptionalPath("/api/auth/google"), true);
+    assert.equal(isSessionOptionalPath("/api/auth/google/callback"), true);
     assert.equal(isSessionOptionalPath("/api/leads/intake"), true);
     assert.equal(isSessionOptionalPath("/api/setup/admin"), true);
     assert.equal(isSessionOptionalPath("/api/deals"), false);
